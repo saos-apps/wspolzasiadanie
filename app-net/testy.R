@@ -20,12 +20,36 @@ require(igraph)
 #install_github('ramnathv/rMaps')
 
 # 0.wczytanie danych
-input<-readRDS("data//common_courts_data.RDS")
+input<-readRDS("app-net/data/common_courts_data.RDS")
+judgments.list<-unlist(input,recursive = F)
+class(judgments.list)<-c("saos_search","list")
+j.judgmentType<-saos::extract(judgments.list,"judgmentType")
+j.judgmentDate<-saos::extract(judgments.list,"judgmentDate")
+j.division<-saos::extract(judgments.list,"division")
+j.judges<-saos::extract(judgments.list,"judges")
 
-# 0. dump orzeczeń próbka ok 10777 s
-dmp.judg<-get_dump_judgments(judgmentStartDate = Sys.Date() - 180,judgmentEndDate = Sys.Date() - 90)
-judges<-saos::extract(dmp.judg,"judges")
-unlist(dmp.judg[[1]]$judges)
+
+j.divisions<-subset(j.division,select=c("id","court.code","court.name","code","name"))
+names(j.divisions)<-c("judgmentID","CourtCode","CourtName","DivisionCode","DivisionName")
+jdivisions<-j.divisions
+divisions<-unique(j.divisions[,-1]) #tabela1: divisions
+jjudgmentType<-j.judgmentType
+jjudgmentDate<-j.judgmentDate
+j.judges<-j.judges[,-3]
+jjudges<-j.judges
+
+judges<-sqldf("select d.judgmentID, j.name as JudgeName, j.specialRoles, d.CourtCode,d.DivisionCode from jjudges j
+              left join jdivisions d on
+              j.id=d.judgmentID") #tabela 2: judges
+
+judgments<-sqldf("select div.judgmentID, t.judgmentType, dat.judgmentDate, div.CourtCode, div.DivisionCode from jjudgmentType t
+                 left join jjudgmentDate dat on dat.id=t.id
+                 left join jdivisions div on div.judgmentID=t.id") #tabela 2: judgments
+
+# zapis do pliku jako dane wejściowe do aplikacji
+write.table(judgments,"app-net/data/judgments.csv")
+write.table(judges,"app-net/data/judges.csv")
+write.table(divisions,"app-net/data/divisions.csv")
 
 # 1. próba lokalizacji sądów (194 z 291)
 options(stringsAsFactors = F)
@@ -43,7 +67,7 @@ t.un<-unique(types$judgmentType)
 types.list<-list(1,2,3,4,5)
 names(types.list)<-c(t.un,"ALL")
 
-judgments.ldz<-search_judgments(ccCourtCode = "15251000",limit=NULL,force=T)
+judgments.ldz<-search_judgments(ccCourtCode = "15251000",limit=200,force=T)
 j.ldz<-get_judgments(judgments.ldz)
 ldz.count<-count_judgments(ccCourtCode ="15251000")
 ldz.judges<-saos::extract(j.ldz,"judges")
