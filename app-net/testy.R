@@ -3,13 +3,6 @@ require(saos)
 require(devtools)
 require(shiny)
 require(RgoogleMaps)
-#require(dismo)
-#library(sp)  # classes for spatial data
-#library(raster)  # grids, rasters
-#library(rasterVis)  # raster visualisation
-#library(maptools)
-#library(rgeos)
-#library(rgdal)
 require(datasets)
 require(googleVis)
 require(sqldf)
@@ -19,7 +12,7 @@ require(igraph)
 #install_github('ramnathv/rCharts')
 #install_github('ramnathv/rMaps')
 
-# 0.wczytanie danych
+## 0.wczytanie danych
 input<-readRDS("app-net/data/common_courts_data.RDS")
 judgments.list<-unlist(input,recursive = F)
 class(judgments.list)<-c("saos_search","list")
@@ -27,7 +20,6 @@ j.judgmentType<-saos::extract(judgments.list,"judgmentType")
 j.judgmentDate<-saos::extract(judgments.list,"judgmentDate")
 j.division<-saos::extract(judgments.list,"division")
 j.judges<-saos::extract(judgments.list,"judges")
-
 
 j.divisions<-subset(j.division,select=c("id","court.code","court.name","code","name"))
 names(j.divisions)<-c("judgmentID","CourtCode","CourtName","DivisionCode","DivisionName")
@@ -38,31 +30,50 @@ jjudgmentDate<-j.judgmentDate
 j.judges<-j.judges[,-3]
 jjudges<-j.judges
 
-judges<-sqldf("select d.judgmentID, j.name as JudgeName, j.specialRoles, d.CourtCode,d.DivisionCode from jjudges j
+judges<-sqldf("select d.judgmentID, j.name as JudgeName, j.specialRoles, d.CourtCode,d.DivisionCode,dat.judgmentDate from jjudges j
               left join jdivisions d on
-              j.id=d.judgmentID") #tabela 2: judges
+              j.id=d.judgmentID
+              left join jjudgmentDate dat on j.id=dat.id") #tabela 2: judges
 
 judgments<-sqldf("select div.judgmentID, t.judgmentType, dat.judgmentDate, div.CourtCode, div.DivisionCode from jjudgmentType t
                  left join jjudgmentDate dat on dat.id=t.id
                  left join jdivisions div on div.judgmentID=t.id") #tabela 2: judgments
 
-# zapis do pliku jako dane wejściowe do aplikacji
+## stworzenie sieci współzasiadania i 
+
+judges.net<-sqldf("select j1.JudgeName as name1, j2.JudgeName as name2, j1.judgmentID, j1.judgmentDate, j1.specialRoles as specialRole1, j2.specialRoles as specialRole2,
+j1.CourtCode, j1.DivisionCode from judges j1
+inner join judges j2 on j1.judgmentID=j2.judgmentID and j1.JudgeName<>j2.JudgeName")
+                  
+## zapis do pliku jako dane wejściowe do aplikacji
 write.table(judgments,"app-net/data/judgments.csv")
 write.table(judges,"app-net/data/judges.csv")
 write.table(divisions,"app-net/data/divisions.csv")
+write.table(judges.net,"app-net/data/judges.net.csv")
 
-# 1. próba lokalizacji sądów (194 z 291)
-options(stringsAsFactors = F)
-courts<-get_dump_courts(T)
-courts.location<-t(sapply(seq(nrow(courts)),function(x) getGeoCode(courts$name[x])))
-no.judg<-sapply(seq(nrow(courts)),function(x) count_judgments(ccCourtCode =courts$code[x]))
-c.loc<-transform(courts.location,lat.lon=as.character(paste(lat,lon,sep=":")))
-c.sample<-cbind(courts$name,c.loc,no.judg)
-c.sample<-c.sample[which(!is.na(c.sample$lon)),]
-names(c.sample)[1]<-"name"
-write.table(c.sample,"app-map/data/locations.csv")
+## narysowanie sieci wszystkich sędziów
+g1<-graph.data.frame(judges.net,directed = F,vertices = NULL)
+g1s<-simplify(g1,remove.loops = T)
+l1s<-layout.fruchterman.reingold(g1s)
+pdf("net1.pdf",width = 1000,height=1000)
+plog2(g1s,l1s)
+dev.off()
 
-# 2.app-map data sample (LDZ)
+## współpraca sędziów - test dla jednego sądu 15502000
+
+s.judgments<-subset(judgments,CourtCode==15502000)
+s.judges<-subset(judges,CourtCode==15502000)
+s.judges.net<-subset(judges.net,CourtCode==15502000)
+g<-graph.data.frame(s.judges.net,directed = F,vertices=NULL)
+g<-simplify(g,remove.multiple = T)
+no.judges<-length(V(g))
+judges.per.case<-count(s.judges,"judgmentID")
+judges.per.case<-subset(judges.per.case,freq>1)
+possible.links<-min(sum(choose(judges.per.case$freq,2)),choose(no.judges,2))
+coop.per.case<-count(s.judges.net,"judgmentID")
+
+
+## typy spraw?
 t.un<-unique(types$judgmentType)
 types.list<-list(1,2,3,4,5)
 names(types.list)<-c(t.un,"ALL")
