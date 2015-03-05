@@ -2,6 +2,52 @@ library(igraph)
 library(sqldf)
 library(ggplot2)
 
+# Multiple plot function
+#
+# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
+# - cols:   Number of columns in layout
+# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
+#
+# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
+# then plot 1 will go in the upper left, 2 will go in the upper right, and
+# 3 will go all the way across the bottom.
+#
+multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
+  require(grid)
+  
+  # Make a list from the ... arguments and plotlist
+  plots <- c(list(...), plotlist)
+  
+  numPlots = length(plots)
+  
+  # If layout is NULL, then use 'cols' to determine layout
+  if (is.null(layout)) {
+    # Make the panel
+    # ncol: Number of columns of plots
+    # nrow: Number of rows needed, calculated from # of cols
+    layout <- matrix(seq(1, cols * ceiling(numPlots/cols)),
+                     ncol = cols, nrow = ceiling(numPlots/cols))
+  }
+  
+  if (numPlots==1) {
+    print(plots[[1]])
+    
+  } else {
+    # Set up the page
+    grid.newpage()
+    pushViewport(viewport(layout = grid.layout(nrow(layout), ncol(layout))))
+    
+    # Make each plot, in the correct location
+    for (i in 1:numPlots) {
+      # Get the i,j matrix positions of the regions that contain this subplot
+      matchidx <- as.data.frame(which(layout == i, arr.ind = TRUE))
+      
+      print(plots[[i]], vp = viewport(layout.pos.row = matchidx$row,
+                                      layout.pos.col = matchidx$col))
+    }
+  }
+}
+
 #1.funkcja color.graph koloruje wierzchołki i krawędzie grafu.
 #	bierzemy wierzchołki grupami, zaczynając od najbardziej licznej. Pierwsze 8 kolorów z palety Set2 jest używane do pokolorowania największych grup. Następnie używamy wybranych z Paired i Greys. Kolory razem z kształtami moga stworzyc max. 8+5x4=28 kombinacji, które nie będą się dublowały dla różnych grup. W tej sieci jest 25 grup.
 color.graph<-function(g){
@@ -40,136 +86,10 @@ text(x=-.9,y=seq(1,-1,length.out=9),labels=V(g)$label,pos=4,adj=c(.5,.5),cex=2.5
 }
 
 #4.funkcja rysująca sieć współpracy. Ustawiona stała wlk. wierzchołków, grubość krawędzi zależy od wagi.
-plog<-function(g,layout1=layout.auto){
+plog.old<-function(g,layout1=layout.auto){
 plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.color=E(g)$color,edge.width=3*log(E(g)$weight,10),edge.curved=TRUE,layout=layout1)
 }
 
-plog2<-function(g,layout1=layout.auto){
-  plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.color="grey45",edge.width=1,edge.curved=TRUE,layout=layout1)
+plog<-function(g,layout1=layout.auto){
+  plot.igraph(g,vertex.size=2,vertex.label=NA,edge.color="grey45",edge.width=1,edge.curved=TRUE,layout=layout1)
 }
-
-#5.poniżej są 4 funkcje definiujące symbole wierzchołków: koło,trójkąt,gwiazda,kwadrat.
-mycircle <- function(coords, v=NULL, params) {
-  vertex.color <- params("vertex", "color")
-  if (length(vertex.color) != 1 && !is.null(v)) {
-    vertex.color <- vertex.color[v]
-  }
-  vertex.size  <- 1/200 * params("vertex", "size")
-  if (length(vertex.size) != 1 && !is.null(v)) {
-    vertex.size <- vertex.size[v]
-  }
-  vertex.frame.color <- params("vertex", "frame.color")
-  if (length(vertex.frame.color) != 1 && !is.null(v)) {
-    vertex.frame.color <- vertex.frame.color[v]
-  }
-  vertex.frame.width <- params("vertex", "frame.width")
-  if (length(vertex.frame.width) != 1 && !is.null(v)) {
-    vertex.frame.width <- vertex.frame.width[v]
-  }
-  
-  mapply(coords[,1], coords[,2], vertex.color, vertex.frame.color,
-         vertex.size, vertex.frame.width,
-         FUN=function(x, y, bg, fg, size, lwd) {
-           symbols(x=x, y=y, bg=bg, fg=fg, lwd=lwd,
-                   circles=size, add=TRUE, inches=FALSE)
-         })
-}
-
-
-								  
-mytriangle <- function(coords, v=NULL, params) {
-  vertex.color <- params("vertex", "color")
-  if (length(vertex.color) != 1 && !is.null(v)) {
-    vertex.color <- vertex.color[v]
-  }
-  vertex.size <- 1/200 * params("vertex", "size")
-  if (length(vertex.size) != 1 && !is.null(v)) {
-    vertex.size <- vertex.size[v]
-  }
-  vertex.frame.color <- params("vertex", "frame.color")
-  if (length(vertex.frame.color) != 1 && !is.null(v)) {
-    vertex.frame.color <- vertex.frame.color[v]
-  }
-  vertex.frame.width <- params("vertex", "frame.width")
-  if (length(vertex.frame.width) != 1 && !is.null(v)) {
-    vertex.frame.width <- vertex.frame.width[v]
-  }
-  mapply(coords[,1], coords[,2], vertex.color, vertex.frame.color,
-         vertex.size, vertex.frame.width,
-         FUN=function(x, y, bg, fg, size, lwd) {
-           symbols(x=x, y=y, bg=bg, fg=fg, lwd=lwd,
-                   stars=cbind(1.5*vertex.size, 1.5*vertex.size, 1.5*vertex.size), add=TRUE, inches=FALSE)
-         })
-}
-	 
-mystar <- function(coords, v=NULL, params) {
-  vertex.color <- params("vertex", "color")
-  if (length(vertex.color) != 1 && !is.null(v)) {
-    vertex.color <- vertex.color[v]
-  }
-  vertex.size  <- 1/200 * params("vertex", "size")
-  if (length(vertex.size) != 1 && !is.null(v)) {
-    vertex.size <- vertex.size[v]
-  }
-  norays <- params("vertex", "norays")
-  if (length(norays) != 1 && !is.null(v)) {
-    norays <- norays[v]
-  }
-  vertex.frame.color <- params("vertex", "frame.color")
-  if (length(vertex.frame.color) != 1 && !is.null(v)) {
-    vertex.frame.color <- vertex.frame.color[v]
-  }
-  vertex.frame.width <- params("vertex", "frame.width")
-  if (length(vertex.frame.width) != 1 && !is.null(v)) {
-    vertex.frame.width <- vertex.frame.width[v]
-  }
-  mapply(coords[,1], coords[,2], vertex.color, vertex.frame.color,
-         vertex.size, vertex.frame.width, norays,
-         FUN=function(x, y, bg, fg, size,lwd, nor) {
-           symbols(x=x, y=y, bg=bg, fg=fg,lwd=lwd,
-                   stars=matrix(c(1.5*size,1.5*size/2), nrow=1, ncol=nor*2), add=TRUE, inches=FALSE)
-         })
-}
-				 
-mysquare <- function(coords, v=NULL, params) {
-  vertex.color <- params("vertex", "color")
-  if (length(vertex.color) != 1 && !is.null(v)) {
-    vertex.color <- vertex.color[v]
-  }
-  vertex.size  <- 1/200 * params("vertex", "size")
-  if (length(vertex.size) != 1 && !is.null(v)) {
-    vertex.size <- vertex.size[v]
-  }
-  vertex.frame.color <- params("vertex", "frame.color")
-  if (length(vertex.frame.color) != 1 && !is.null(v)) {
-    vertex.frame.color <- vertex.frame.color[v]
-  }
-  vertex.frame.width <- params("vertex", "frame.width")
-  if (length(vertex.frame.width) != 1 && !is.null(v)) {
-    vertex.frame.width <- vertex.frame.width[v]
-  }
-  
-  mapply(coords[,1], coords[,2], vertex.color, vertex.frame.color,
-         vertex.size, vertex.frame.width,
-         FUN=function(x, y, bg, fg, size, lwd) {
-           symbols(x=x, y=y, bg=bg, fg=fg, lwd=lwd,
-                   squares=2*vertex.size, add=TRUE, inches=FALSE)
-         })
-}
-
-#6.dodanie zdefiniowanych powyżej kształtów wierzchołków do opcji wyboru przy rysowaniu sieci.
-add.vertex.shape("fcircle", clip=igraph.shape.noclip,
-		 plot=mycircle, parameters=list(vertex.frame.color=1,
-                                  vertex.frame.width=1))
-
-add.vertex.shape("ftriangle", clip=igraph.shape.noclip,
-                 plot=mytriangle,parameters=list(vertex.frame.color=1,
-                                  vertex.frame.width=1))
-
-add.vertex.shape("fstar", clip=igraph.shape.noclip,
-                 plot=mystar, parameters=list(vertex.norays=5,vertex.frame.color=1,
-                                  vertex.frame.width=1))
-								  
-add.vertex.shape("fsquare", clip=igraph.shape.noclip,
-                 plot=mysquare, parameters=list(vertex.frame.color=1,
-                                  vertex.frame.width=1))	
