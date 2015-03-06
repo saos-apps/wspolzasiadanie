@@ -1,3 +1,4 @@
+require(ggmap)
 require(plyr)
 require(saos)
 require(devtools)
@@ -14,13 +15,13 @@ require(igraph)
 
 ## 0.wczytanie danych
 input<-readRDS("app-net/data/common_courts_data.RDS")
+locations<-readRDS("../saos-apps/courts_coords.RDS")
 judgments.list<-unlist(input,recursive = F)
 class(judgments.list)<-c("saos_search","list")
 j.judgmentType<-saos::extract(judgments.list,"judgmentType")
 j.judgmentDate<-saos::extract(judgments.list,"judgmentDate")
 j.division<-saos::extract(judgments.list,"division")
 j.judges<-saos::extract(judgments.list,"judges")
-
 j.divisions<-subset(j.division,select=c("id","court.code","court.name","code","name"))
 names(j.divisions)<-c("judgmentID","CourtCode","CourtName","DivisionCode","DivisionName")
 jdivisions<-j.divisions
@@ -39,6 +40,10 @@ judges<-sqldf("select d.judgmentID, j.name as JudgeName, j.specialRoles, d.Court
 judgments<-sqldf("select div.judgmentID, t.judgmentType, dat.judgmentDate,dat.judgmentYear, div.CourtCode, div.DivisionCode from jjudgmentType t
                  left join jjudgmentDate dat on dat.id=t.id
                  left join jdivisions div on div.judgmentID=t.id") #tabela 2: judgments
+courts<-sqldf("select distinct CourtCode, CourtName from divisions")
+courts<-sqldf("select c.* , l.lon,l.lat from courts c
+                 left join locations l
+                 on c.CourtName=l.name")
 
 ## stworzenie sieci współzasiadania i 
 
@@ -51,6 +56,7 @@ write.table(judgments,"app-net/data/judgments.csv")
 write.table(judges,"app-net/data/judges.csv")
 write.table(divisions,"app-net/data/divisions.csv")
 write.table(judges.net,"app-net/data/judges.net.csv")
+write.table(courts,"app-net/data/courts.csv")
 
 ## narysowanie sieci wszystkich sędziów
 g1<-graph.data.frame(judges.net,directed = F,vertices = NULL)
@@ -81,57 +87,29 @@ g.comp<-t(sapply(unique(E(g1)$year),function(x) {
   c(x,max(cl$csize)/vcount(g.sub))
   }))
 
+## mobilność sędziów 
+
+judgesunique<-sqldf("select distinct JudgeName, CourtCode from judges")
+judges.sub<-sqldf("select j1.CourtCode CourtCode1, j2.CourtCode CourtCode2, j1.JudgeName from judgesunique j1
+                  inner join judgesunique j2 
+                  on j1.JudgeName=j2.JudgeName and
+                  j1.CourtCode<>j2.CourtCode")
+g.mob<-graph.data.frame(judges.sub,directed=F)
+gname<-data.frame(Vname=V(g.mob)$name)
+gcoord<-sqldf("select c.lon, c.lat from gname n
+              left join courts c on
+              c.CourtCode=n.Vname")
+
+map<-get_map(location = "Poland",zoom=6,color="bw")
+ggmap(map)
+par(new=T)
+plog(g.mob,as.matrix(gcoord)) #mapa dla całej PL
+
+
+
+
+  
 ## typy spraw?
 t.un<-unique(types$judgmentType)
 types.list<-list(1,2,3,4,5)
 names(types.list)<-c(t.un,"ALL")
-
-judgments.ldz<-search_judgments(ccCourtCode = "15251000",limit=200,force=T)
-j.ldz<-get_judgments(judgments.ldz)
-ldz.count<-count_judgments(ccCourtCode ="15251000")
-ldz.judges<-saos::extract(j.ldz,"judges")
-ldz.divisions<-saos::extract(j.ldz,"division")
-ldz.divisions<-ldz.divisions[,1:3]
-ldzdivisions<-ldz.divisions
-names(ldzdivisions)[2]<-"divisionid"
-divisions.un<-ldz.divisions[!duplicated(ldz.divisions$name),]
-ldz.judges<-subset(ldz.judges,select=c("id","name"))
-ldzjudges<-ldz.judges
-ldz.judges.net<-sqldf("select j1.id,j1.name as name1, j2.name as name2,d.divisionid from ldzjudges j1 
-                      inner join ldzjudges j2 on
-                      j1.id=j2.id and
-                      j1.name<>j2.name
-                      left join ldzdivisions d
-                      on d.id = j1.id")
-ldzjudgesnet<-ldz.judges.net
-ldz.dates<-saos::extract(j.ldz,"judgmentDate")
-ldz.dates<-ldz.dates[order(ldz.dates$id),]
-ldz.dates<-transform(ldz.dates,year=as.numeric(substr(judgmentDate,1,4)))
-ldzdates<-ldz.dates
-ldz.judgment.sum<-count(ldz.dates,"year")
-ldz.judge<-count(ldz.judges.year,"year")
-merge<-sqldf("select d.*, j.* from ldzjudgesnet j
-             left join ldzdates d 
-             on d.id=j.id")
-ldz.judges.year<-sqldf("select d.*, j.* from ldzjudges j
-                       left join ldzdates d
-                       on j.id = d.id")
-ldz.judges.year<-ldz.judges.year[,c("name","id","judgmentDate","year")]
-
-write.table(merge,"app-map/data/net.csv")
-write.table(ldz.judges.year,"app-map/data/judges.csv")
-write.table(ldz.dates,"app-map/data/dates.csv")
-write.table(merge,"app-net/data/net.csv")
-write.table(ldz.judges.year,"app-net/data/judges.csv")
-write.table(ldz.divisions,"app-net/data/divisions.csv")
-
-# 3. sample viz
-
-df.graph<-subset(merge,divisionid==1018,select=c("name1","name2","year"))
-g1<-graph.data.frame(df.graph,directed = F,vertices = NULL)
-g1<-simplify(g1,remove.multiple = T,remove.loops = F)
-l1<-layout.fruchterman.reingold(g1)
-plog2(g1,l1)
-g1<-gvisGeoMap(c.sample,"lat.lon",hovervar = "courts$name",numvar="no.judg",options=list(region="155", dataMode="markers",width=600, height=400))
-g2<-gvisGeoChart(c.sample,"lat.lon",hovervar = "courts$name",sizevar = "no.judg",options=list(region="155", dataMode="markers",width=600, height=400))
-g3<-PlotOnStaticMap(lat = c.sample$lat, lon = c.sample$lon, zoom = 5,size=30, cex = 1.4, pch = 19, col = "red")

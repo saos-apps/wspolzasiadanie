@@ -1,11 +1,12 @@
 require(shiny)
-library(saos)
+require(saos)
 require(googleVis)
 require(ggplot2)
 require(knitr)
 require(WDI)
 require(RgoogleMaps)
 require(igraph)
+require(plyr)
 # server.R
 source("funkcje.R")
 #locations<-read.table("data/locations.csv",stringsAsFactors = F)
@@ -17,6 +18,7 @@ judgments<-read.table("data/judgments.csv")
 judges<-read.table("data/judges.csv")
 divisions<-read.table("data/divisions.csv")
 judges.net<-read.table("data/judges.net.csv")
+courts<-read.table("data/courts.csv")
 
 shinyServer(function(input, output) {
 
@@ -48,7 +50,6 @@ shinyServer(function(input, output) {
   
   
   
-  
 #   no.judges.year<-reactive({
 #     judges.year<-count(judges,c("year","name"))
 #     names(judges.year)[3]<-"a"
@@ -74,6 +75,29 @@ shinyServer(function(input, output) {
     g
   })
   
+  judges.coop.year<-reactive({
+  years<-unique(subset.judges()$judgmentYear)
+  list1<-as.data.frame(t(sapply(years,function(x){
+    sub.judges<-subset(subset.judges(),judgmentYear==x)
+    n.judges<-length(unique(sub.judges$JudgeName))
+    sub.judgments<-subset(subset.judgments(),judgmentYear==x)
+    g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+    coop.array<-count(sub.judges,"judgmentID")$freq
+    coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
+    c(x,coop)
+  })))
+  names(list1)<-c("year","coop")
+  list1
+  })
+
+  judges.coop<-reactive({
+  n.judges<-length(unique(subset.judges()$JudgeName))
+  coop.array<-count(subset.judges(),"judgmentID")$freq
+  coop<-ecount(subgraph.simplified())/max.unique.links(n.judges,coop.array)
+  paste("vcount:",vcount(subgraph.division()),"ecount",ecount(subgraph.division()),
+        "ecount simplified:",ecount(subgraph.simplified()),"\n coop:",coop,sep="  ")
+  })
+
   k.dist<-reactive({
     k<-degree(subgraph.simplified())
     as.data.frame(k)
@@ -107,9 +131,9 @@ judges.year<-reactive({
   df
 })
 
-  #output$table1<-renderDataTable({subset.division()})
-  output$table1<-renderDataTable({as.data.frame(E(subgraph.division())$judgmentYear)})
-  output$text1<-renderText({})
+  output$table1<-renderDataTable({judges.coop.year()})
+  #output$table1<-renderDataTable({as.data.frame(E(subgraph.division())$judgmentYear)})
+  output$text1<-renderText({judges.coop()})
   output$plot.net <- renderPlot({
     lay<-layout.fruchterman.reingold(subgraph.simplified())
     plog(subgraph.simplified(),lay)
@@ -135,8 +159,12 @@ judges.year<-reactive({
     ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()
   })
 
+plot.coop<- reactive({
+  ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()
+})
+
   output$plot.multi<-renderPlot({
-    multiplot(plot.comp(),plot.judges(),plot.k(),plot.w(),plot.t(),cols=2)
+    multiplot(plot.comp(),plot.judges(),plot.coop(),plot.k(),plot.w(),plot.t(),cols=2)
   })
 #   output$plot2<-renderGvis({
 #     #no.rand<-data.frame(year=seq(1990,2015,length.out=26),number=seq(30,100,length.out = 26))

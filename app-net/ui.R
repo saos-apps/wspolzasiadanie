@@ -9,21 +9,21 @@ fluidPage(
       uiOutput("select.court"),
       #selectInput("select.court",label=h3("Wybierz sąd:"),choices=as.list(locations$name)),
       #selectInput("select.div",label=h3("Wybierz wydział/izbę:"),choices=as.list(locations$courts.name)),
-      uiOutput("select.division"),
-      selectInput("select.year",label=h3("Wybierz rok"),choices=as.list(seq(1990,2015)))
+      uiOutput("select.division")
+     # selectInput("select.year",label=h3("Wybierz rok"),choices=as.list(seq(1990,2015)))
     ),
     mainPanel(
       #dataTableOutput("text"),
-      #textOutput("text1"),
+      textOutput("text1"),
       plotOutput("plot.net"),
       #plotOutput("plot.comp"),
       #plotOutput("plot.judges"),
       plotOutput("plot.multi"),
       plotOutput("plot.k"),
       plotOutput("plot.w"),
-      plotOutput("plot.t")
+      plotOutput("plot.t"),
       
-      #dataTableOutput("table1")
+      dataTableOutput("table1")
     #  htmlOutput("plot2")
     )
     

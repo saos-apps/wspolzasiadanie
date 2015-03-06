@@ -1,0 +1,116 @@
+"CourtCode" "CourtName" "lon" "lat"
+"1" "15500000" "Sąd Apelacyjny we Wrocławiu" 17.0385376 51.1078852
+"2" "15500500" "Sąd Okręgowy w Jeleniej Górze" 15.7348868 50.8979495
+"3" "15500505" "Sąd Rejonowy w Bolesławcu" 15.5643631 51.2652645
+"4" "15500510" "Sąd Rejonowy w Jeleniej Górze" 15.7360641 50.9019594
+"5" "15500520" "Sąd Rejonowy w Lubaniu" 15.2868507 51.1190662
+"6" "15500530" "Sąd Rejonowy w Zgorzelcu" 15.0142727 51.1518042
+"7" "15501000" "Sąd Okręgowy w Legnicy" 16.1577176 51.2056113
+"8" "15501005" "Sąd Rejonowy w Głogowie" 16.0902149 51.6622283
+"9" "15501015" "Sąd Rejonowy w Legnicy" 16.1576767 51.2059012
+"10" "15501020" "Sąd Rejonowy w Lubinie" 22.5526986 51.2473328
+"11" "15501025" "Sąd Rejonowy w Złotoryi" 15.9131799 51.1255303
+"12" "15501500" "Sąd Okręgowy w Opolu" 17.9279466 50.6658608
+"13" "15501505" "Sąd Rejonowy w Brzegu" 17.4674284 50.8601149
+"14" "15501515" "Sąd Rejonowy w Kędzierzynie Koźlu" 18.1475369 50.3337
+"15" "15501525" "Sąd Rejonowy w Nysie" 17.3354479 50.474439
+"16" "15501535" "Sąd Rejonowy w Opolu" 17.9446694 50.6680976
+"17" "15501540" "Sąd Rejonowy w Prudniku" 17.5750481 50.3210937
+"18" "15501545" "Sąd Rejonowy w Strzelcach Opolskich" 18.2945735 50.5116856
+"19" "15502000" "Sąd Okręgowy w Świdnicy" 16.4853072 50.8411778
+"20" "15502005" "Sąd Rejonowy w Dzierżoniowie" 16.6567892 50.7308605
+"21" "15502010" "Sąd Rejonowy w Kłodzku" 16.6492459 50.43288
+"22" "15502015" "Sąd Rejonowy w Świdnicy" 16.4689626 50.8433153
+"23" "15502020" "Sąd Rejonowy w Wałbrzychu" 16.2783999 50.769349
+"24" "15502025" "Sąd Rejonowy w Ząbkowicach Śląskich" 16.8274356 50.5918472
+"25" "15502500" "Sąd Okręgowy we Wrocławiu" 17.0242521 51.1060062
+"26" "15502510" "Sąd Rejonowy w Oleśnicy" 17.379443 51.2058988
+"27" "15502515" "Sąd Rejonowy w Oławie" 17.2942988 50.941197
+"28" "15502525" "Sąd Rejonowy w Środzie Śląskiej" 16.5910953 51.1651491
+"29" "15502530" "Sąd Rejonowy w Trzebnicy" 17.063354 51.3064233
+"30" "15502540" "Sąd Rejonowy Wrocław Fabryczna we Wrocławiu" 17.0385376 51.1078852
+"31" "15502545" "Sąd Rejonowy Wrocław Krzyki we Wrocławiu" 17.0385376 51.1078852
+"32" "15502550" "Sąd Rejonowy Wrocław Śródmieście we Wrocławiu" 17.0385376 51.1078852
+"33" "15050000" "Sąd Apelacyjny w Białymstoku" 23.1707379 53.1278099
+"34" "15050500" "Sąd Okręgowy w Białymstoku" 23.1569564 53.130226
+"35" "15050505" "Sąd Rejonowy w Białymstoku" 23.1852454 53.1069796
+"36" "15050510" "Sąd Rejonowy w Bielsku Podlaskim" 23.1889871 52.769498
+"37" "15050515" "Sąd Rejonowy w Sokółce" 23.4949002 53.4076767
+"38" "15051000" "Sąd Okręgowy w Łomży" 22.0775771 53.1786427
+"39" "15051005" "Sąd Rejonowy w Łomży" 22.0774607 53.1752009
+"40" "15051010" "Sąd Rejonowy w Zambrowie" 22.2436237 52.9680486
+"41" "15051500" "Sąd Okręgowy w Olsztynie" 20.4837828 53.7785808
+"42" "15051505" "Sąd Rejonowy w Bartoszycach" 20.8074777 54.2475145
+"43" "15051510" "Sąd Rejonowy w Giżycku" 21.7781727 54.0355669
+"44" "15051515" "Sąd Rejonowy w Kętrzynie" 21.356367 54.0831567
+"45" "15051520" "Sąd Rejonowy w Mrągowie" 21.3038614 53.8765142
+"46" "15051525" "Sąd Rejonowy w Olsztynie" 20.4670189 53.7787586
+"47" "15051530" "Sąd Rejonowy w Szczytnie" 20.9912145 53.5674981
+"48" "15052000" "Sąd Okręgowy w Suwałkach" 22.9502892 54.0991171
+"49" "15052005" "Sąd Rejonowy w Augustowie" 22.9874615 53.8415193
+"50" "15052010" "Sąd Rejonowy w Ełku" 22.3513923 53.8246571
+"51" "15052015" "Sąd Rejonowy w Olecku" 22.5046812 54.042736
+"52" "15052020" "Sąd Rejonowy w Suwałkach" 22.951405 54.099828
+"53" "15052500" "Sąd Okręgowy w Ostrołęce" 21.5701296 53.0841768
+"54" "15052505" "Sąd Rejonowy w Ostrołęce" 21.5663838 53.081982
+"55" "15052510" "Sąd Rejonowy w Ostrowi Mazowieckiej" 21.8912988 52.8027984
+"56" "15052515" "Sąd Rejonowy w Przasnyszu" 20.8912111 53.0276373
+"57" "15052520" "Sąd Rejonowy w Wyszkowie" 21.4514751 52.5925274
+"58" "15100000" "Sąd Apelacyjny w Gdańsku" 18.6402899 54.3519596
+"59" "15100500" "Sąd Okręgowy w Bydgoszczy" 17.9991292 53.1197131
+"60" "15101000" "Sąd Okręgowy w Elblągu" 19.4060166 54.1600217
+"61" "15101500" "Sąd Okręgowy w Gdańsku" 18.6392847 54.352099
+"62" "15102000" "Sąd Okręgowy w Słupsku" 17.0293797 54.4681866
+"63" "15102500" "Sąd Okręgowy w Toruniu" 18.6016304 53.0107695
+"64" "15103000" "Sąd Okręgowy we Włocławku" 19.0677357 52.6483303
+"65" "15150000" "Sąd Apelacyjny w Katowicach" 19.0227847 50.2776269
+"66" "15150500" "Sąd Okręgowy w Bielsku-Białej" 19.0410872 49.8202452
+"67" "15151000" "Sąd Okręgowy w Częstochowie" 19.111679 50.8163762
+"68" "15151500" "Sąd Okręgowy w Gliwicach" 18.6567658 50.2918404
+"69" "15152000" "Sąd Okręgowy w Katowicach" 19.0267324 50.2492151
+"70" "15200000" "Sąd Apelacyjny w Krakowie" 19.9615869 50.0650799
+"71" "15200500" "Sąd Okręgowy w Kielcach" 20.6353224 50.865193
+"72" "15201000" "Sąd Okręgowy w Krakowie" 19.9619104 50.0636656
+"73" "15201500" "Sąd Okręgowy w Nowym Sączu" 20.6894162 49.6242653
+"74" "15202000" "Sąd Okręgowy w Tarnowie" 20.9936902 50.0085475
+"75" "15250000" "Sąd Apelacyjny w Łodzi" 19.471834 51.77243
+"76" "15250500" "Sąd Okręgowy w Kaliszu" 18.0893069 51.7599145
+"77" "15251000" "Sąd Okręgowy w Łodzi" 19.4711296 51.7725342
+"78" "15251500" "Sąd Okręgowy w Piotrkowie Trybunalskim" 19.6913649 51.4093396
+"79" "15252000" "Sąd Okręgowy w Sieradzu" 18.7310885 51.5936483
+"80" "15252500" "Sąd Okręgowy w Płocku" 19.6879641 52.5429012
+"81" "15300000" "Sąd Apelacyjny w Lublinie" 22.5481574 51.245149
+"82" "15300500" "Sąd Okręgowy w Lublinie" 22.5560582 51.248044
+"83" "15301000" "Sąd Okręgowy w Radomiu" 21.1528828 51.3986452
+"84" "15301500" "Sąd Okręgowy w Siedlcach" 22.2804934 52.1685982
+"85" "15302000" "Sąd Okręgowy w Zamościu" 23.249559 50.717513
+"86" "15350000" "Sąd Apelacyjny w Poznaniu" 16.918097 52.438581
+"87" "15350500" "Sąd Okręgowy w Koninie" 18.2498566 52.2328898
+"88" "15351000" "Sąd Okręgowy w Poznaniu" 16.9291459 52.4111667
+"89" "15351500" "Sąd Okręgowy w Zielonej Górze" 15.5036403 51.9371793
+"90" "15400000" "Sąd Apelacyjny w Rzeszowie" 22.0065174 50.0408168
+"91" "15400500" "Sąd Okręgowy w Krośnie" 21.7661504 49.6922865
+"92" "15401000" "Sąd Okręgowy w Rzeszowie" 22.0006845 50.032653
+"93" "15401500" "Sąd Okręgowy w Tarnobrzegu" 21.6790698 50.5729079
+"94" "15401515" "Sąd Rejonowy w Tarnobrzegu" 21.6790698 50.5729079
+"95" "15402000" "Sąd Okręgowy w Przemyślu" 22.7802668 49.7816148
+"96" "15550000" "Sąd Apelacyjny w Szczecinie" 16.2002203 54.1920451
+"97" "15550500" "Sąd Okręgowy w Gorzowie Wielkopolskim" 15.2295549 52.7427474
+"98" "15551000" "Sąd Okręgowy w Koszalinie" 16.2002203 54.1920451
+"99" "15551500" "Sąd Okręgowy w Szczecinie" 16.2002203 54.1920451
+"100" "15450000" "Sąd Apelacyjny w Warszawie" 21.0047279 52.2499898
+"101" "15450500" "Sąd Okręgowy w Warszawie" 20.991976 52.2410058
+"102" "15450505" "Sąd Rejonowy w Grodzisku Mazowieckim" 20.627744 52.107306
+"103" "15450510" "Sąd Rejonowy w Piasecznie" 21.0266679 52.0732251
+"104" "15450515" "Sąd Rejonowy w Pruszkowie" 20.811445 52.162731
+"105" "15450520" "Sąd Rejonowy dla Warszawy-Mokotowa w Warszawie" 20.985633 52.2374248
+"106" "15450525" "Sąd Rejonowy dla m. st. Warszawy w Warszawie" 21.0137813 52.2274854
+"107" "15450530" "Sąd Rejonowy dla Warszawy-Śródmieścia w Warszawie" 21.0137813 52.2274854
+"108" "15450540" "Sąd Rejonowy dla Warszawy-Żoliborza w Warszawie" 21.0122287 52.2296756
+"109" "15451000" "Sąd Okręgowy Warszawa-Praga w Warszawie" 21.0691811 52.2488288
+"110" "15451005" "Sąd Rejonowy w Legionowie" 20.9192218 52.3948021
+"111" "15451010" "Sąd Rejonowy w Nowym Dworze Mazowieckim" 20.7144904 52.4297816
+"112" "15451015" "Sąd Rejonowy w Otwocku" 21.2661561 52.1056111
+"113" "15451020" "Sąd Rejonowy dla Warszawy Pragi-Południe w Waszawie" 21.0691811 52.2488288
+"114" "15451025" "Sąd Rejonowy dla Warszawy Pragi-Północ w Waszawie" 21.0691811 52.2488288
+"115" "15451030" "Sąd Rejonowy w Wołominie" 21.2389141 52.3437534

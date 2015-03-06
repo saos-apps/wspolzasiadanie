@@ -93,3 +93,35 @@ plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.colo
 plog<-function(g,layout1=layout.auto){
   plot.igraph(g,vertex.size=2,vertex.label=NA,edge.color="grey45",edge.width=1,edge.curved=TRUE,layout=layout1)
 }
+
+max.unique.links<-function(judges,array){
+  array<-sort(array,T)
+  un.links<-choose(judges,2)
+
+  o1<-1
+  n1<-2
+  r<-0
+  
+  ordered<-fun1(array,judges,o1,n1)
+  exist.links<-sum(choose(array[ordered],2))
+  pos.links<-sum(choose(array[-ordered],2)-choose(ceiling(array[-ordered]/2),2)-choose(floor(array[-ordered]/2),2))
+
+  ifelse((exist.links+pos.links)<un.links,
+         c<-exist.links+pos.links,
+         c<-un.links
+         )
+  c
+}
+
+
+
+fun1<-function(array,judges,order,nnext){
+  ifelse(sum(array[c(order,nnext)])<judges,
+         return(fun1(array,judges,c(order,nnext),nnext+1)),
+         ifelse(sum(array[c(order,nnext)])>judges,
+                return(fun1(array,judges,order,nnext+2)),
+                c(order,nnext)
+           )
+         )
+  c(order,nnext)
+}
