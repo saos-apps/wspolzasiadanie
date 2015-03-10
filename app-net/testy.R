@@ -155,7 +155,6 @@ temp2$name<-sub("/*so/*","",temp2$name,ignore.case = T)
 temp2$name<-sub("/*sa/*","",temp2$name,ignore.case = T)
 temp2$surname<-sub("/*so/*","",temp2$surname,ignore.case = T)
 temp2$surname<-sub("/*sa/*","",temp2$surname,ignore.case = T)
-
 sapply(names.male,function(x) temp2$sex[which(tolower(temp2$name)==x  & is.na(temp2$sex))]<<-"M")
 sapply(names.female,function(x) temp2$sex[which(tolower(temp2$name)==x  & is.na(temp2$sex))]<<-"F")
 sapply(names.male,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"M")
