@@ -79,31 +79,46 @@ g
 }
 
 #3.funkcja rysująca legendę. w plot rysujemy tylko wierzchołki. 
-plogleg<-function(g,layout1=layout.auto){
+plogleg.old<-function(g,layout1=layout.auto){
 plot.igraph(g,vertex.size=5,vertex.label=NA,vertex.label.cex=3,vertex.label.degree=0,vertex.shape=V(g)$shape,vertex.frame.width=1,
 vertex.frame.color=V(g)$fcolor,edge.color=NA,edge.width=0.7,edge.curved=FALSE,layout=layout1,asp=.35)#,rescale=F,ylim=c(6,8))
 text(x=-.9,y=seq(1,-1,length.out=9),labels=V(g)$label,pos=4,adj=c(.5,.5),cex=2.5); #ylim=c(-.5,.5)
 }
 
+plog.legend<-function(list){
+  vc<-length(list)-1
+  g.leg<-graph.empty(vc,F)
+  V(g.leg)$label=list$labels
+  V(g.leg)$color=names(list[-length(list)])
+  lay.leg<-matrix(c(rep(0,vc),seq(1,vc)),byrow = F,nrow = vc)
+  plot.igraph(g.leg,vertex.label.dist=1,layout=lay.leg)
+}
 #4.funkcja rysująca sieć współpracy. Ustawiona stała wlk. wierzchołków, grubość krawędzi zależy od wagi.
 plog.old<-function(g,layout1=layout.auto){
 plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.color=E(g)$color,edge.width=3*log(E(g)$weight,10),edge.curved=TRUE,layout=layout1)
 }
 
-plog<-function(g,layout1=layout.auto){
-  plot.igraph(g,vertex.size=2,vertex.label=NA,edge.color="grey45",edge.width=1,edge.curved=TRUE,layout=layout1)
+plog<-function(g,layout1=layout.auto,list=NULL){
+  plot.igraph(g,vertex.size=2,vertex.label=NA,edge.color="grey45",edge.width=1,edge.curved=TRUE,layout=layout1,mark.groups=list,mark.col=names(list))
 }
+
 
 max.unique.links<-function(judges,array){
   array<-sort(array,T)
   un.links<-choose(judges,2)
 
-  o1<-1
-  n1<-2
-  r<-0
+  ordered<-1
+  nnext<-2
+  ifelse(length(array)<=1000,
+  ordered<-fun1(array,judges,ordered,nnext),
+  {
+    sapply(seq(ceiling(length(array)/1000)),function(x) {
+      ordered<<-fun1(array[1:min(x*1000,length(array))],judges,ordered,nnext)
+      nnext<<-ordered[length(ordered)]
+    })
+  })
   
-  ordered<-fun1(array,judges,o1,n1)
-  exist.links<-sum(choose(array[ordered],2))
+  exist.links<-sum(choose(array[ordered],2),na.rm = T)
   pos.links<-sum(choose(array[-ordered],2)-choose(ceiling(array[-ordered]/2),2)-choose(floor(array[-ordered]/2),2))
 
   ifelse((exist.links+pos.links)<un.links,

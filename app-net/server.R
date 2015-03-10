@@ -9,16 +9,13 @@ require(igraph)
 require(plyr)
 # server.R
 source("funkcje.R")
-#locations<-read.table("data/locations.csv",stringsAsFactors = F)
-#net<-read.table("data/net.csv",stringsAsFactors = F)
-#divisions<-read.table("data/divisions.csv",stringsAsFactors = F)
-#table1<-read.table("data/judges.csv",stringsAsFactors = F)
-
 judgments<-read.table("data/judgments.csv")
 judges<-read.table("data/judges.csv")
 divisions<-read.table("data/divisions.csv")
 judges.net<-read.table("data/judges.net.csv")
 courts<-read.table("data/courts.csv")
+
+#funkcje nieużywane na razie zakomentowane (dla wydziału/izby)
 
 shinyServer(function(input, output) {
 
@@ -29,91 +26,164 @@ shinyServer(function(input, output) {
     selectInput("select.court",label=h3("Wybierz sąd:"),choices=list1)
   })
   
-  output$select.division<-renderUI({
-    divisions.subset<-subset(divisions,CourtCode==input$select.court)
-    list1<-as.list(divisions.subset$DivisionCode)
-    names(list1)<-divisions.subset$DivisionName
-    selectInput("select.div",label=h3("Wybierz wydział/izbę:"),choices=list1)
-  })
-  
-  subset.judgments<-reactive({
-    subset(judges.net,CourtCode==input$select.court & DivisionCode==input$select.div )
-    #g<-graph.data.frame(s,directed = F,vertices=NULL)
-    #g<-simplify(g,remove.multiple = T,remove.loops = T,edge.attr.comb = "first")
-    #s2<-get.data.frame(g)
-  })
-  
-  subset.judges<-reactive({
-    subset(judges,CourtCode==input$select.court & DivisionCode==input$select.div )
-  })
-  
-  
-  
-  
-#   no.judges.year<-reactive({
-#     judges.year<-count(judges,c("year","name"))
-#     names(judges.year)[3]<-"a"
-#     judges.year<-count(judges.year,"year")
-#     judges.year<-judges.year[order(judges.year$year),]
+#   
+#   output$select.division<-renderUI({
+#     divisions.subset<-subset(divisions,CourtCode==input$select.court)
+#     list1<-as.list(divisions.subset$DivisionCode)
+#     names(list1)<-divisions.subset$DivisionName
+#     selectInput("select.div",label=h3("Wybierz wydział/izbę:"),choices=list1)
 #   })
 #   
-#   division.coop<-reactive({
-#     coop<-count(subset.division(),"year")  
-#     no.judges<-subset(no.judges.year(),year %in% coop$year)
-#     coop<-transform(coop,wsp=coop$freq/choose(no.judges$freq,2))
-#     coop
+#   
+#   subset.judgments<-reactive({
+#     subset(judges.net,CourtCode==input$select.court & DivisionCode==input$select.div )
 #   })
   
-  subgraph.division<-reactive({
-    g<-graph.data.frame(subset.judgments(),directed = F,vertices=NULL)
-    g
+  subset.judgments.court<-reactive({
+    subset(judges.net,CourtCode==input$select.court)
   })
   
-  subgraph.simplified<-reactive({
-    g<-simplify(subgraph.division(),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
-    E(g)$weight<-sapply(E(g)$CourtCode,length)
-    g
+#   subset.judges<-reactive({
+#     subset(judges,CourtCode==input$select.court & DivisionCode==input$select.div )
+#   })
+  
+  subset.judges.court<-reactive({
+    subset(judges,CourtCode==input$select.court)
   })
+  
+  judges.top.court<-reactive({
+    temp<-count(subset.judges.court(),"JudgeName")
+    top<-head(temp[order(temp$freq,decreasing = T),],10)
+    top$JudgeName<-as.vector(top$JudgeName)
+    table1 <- table(top$JudgeName)
+    c<-sapply(seq(10),function(x) which(names(table1)==top$JudgeName[x]))
+    levels1 <- names(table1)[rev(c)]
+    top$JudgeName <- factor(top$JudgeName, levels = levels1)
+    names(top)[2]<-"N.of.judgments"
+    top
+  })
+
+#   subgraph.division<-reactive({
+#     g<-graph.data.frame(subset.judgments(),directed = F,vertices=NULL)
+#     g
+#   })
+  
+  subgraph.court<-reactive({
+    g<-graph.data.frame(subset.judgments.court(),directed = F,vertices=NULL)
+    g
+    
+    
+  })
+#   
+#   subgraph.simplified<-reactive({
+#     g<-simplify(subgraph.division(),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+#     E(g)$weight<-sapply(E(g)$CourtCode,length)
+#     g
+#   })
+  
+  subgraph.simplified.court<-reactive({
+    g<-simplify(subgraph.court(),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+    E(g)$weight<-sapply(E(g)$CourtCode,length)
+    g       
+    })
+    
+  subgraph.mark.list<-reactive({
+    g<-subgraph.simplified.court()
+    div.vect<-as.vector(E(g)$DivisionCode)
+    div.un<-unique(unlist(div.vect))
+    ymax<-length(div.un)
+    list<-lapply(seq(ymax),function(y) {
+    which.div<-sapply(seq(ecount(g)),function(x) div.un[y] %in% unique(div.vect[[x]]))
+    v<-get.edges(g,E(g)[which.div])
+    unique(c(v[,1],v[,2]))
+    })
+    names(list)<-rainbow(length(div.un))
+    list$labels<-div.un
+    list
+  })
+  
+  
+#   judges.coop.year<-reactive({
+#   years<-unique(subset.judges()$judgmentYear)
+#   list1<-as.data.frame(t(sapply(years,function(x){
+#     sub.judges<-subset(subset.judges(),judgmentYear==x)
+#     n.judges<-length(unique(sub.judges$JudgeName))
+#     sub.judgments<-subset(subset.judgments(),judgmentYear==x)
+#     g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+#     coop.array<-count(sub.judges,"judgmentID")$freq
+#     coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
+#     c(x,coop)
+#   })))
+#   names(list1)<-c("year","coop")
+#   list1
+#   })
   
   judges.coop.year<-reactive({
-  years<-unique(subset.judges()$judgmentYear)
-  list1<-as.data.frame(t(sapply(years,function(x){
-    sub.judges<-subset(subset.judges(),judgmentYear==x)
-    n.judges<-length(unique(sub.judges$JudgeName))
-    sub.judgments<-subset(subset.judgments(),judgmentYear==x)
-    g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
-    coop.array<-count(sub.judges,"judgmentID")$freq
-    coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
-    c(x,coop)
-  })))
-  names(list1)<-c("year","coop")
-  list1
+    years<-unique(subset.judges.court()$judgmentYear)
+    list1<-as.data.frame(t(sapply(years,function(x){
+      sub.judges<-subset(subset.judges.court(),judgmentYear==x)
+      n.judges<-length(unique(sub.judges$JudgeName))
+      sub.judgments<-subset(subset.judgments.court(),judgmentYear==x)
+      g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+      coop.array<-count(sub.judges,"judgmentID")$freq
+      coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
+      c(x,coop)
+    })))
+    names(list1)<-c("year","coop")
+    list1
   })
 
-  judges.coop<-reactive({
-  n.judges<-length(unique(subset.judges()$JudgeName))
-  coop.array<-count(subset.judges(),"judgmentID")$freq
-  coop<-ecount(subgraph.simplified())/max.unique.links(n.judges,coop.array)
-  paste("vcount:",vcount(subgraph.division()),"ecount",ecount(subgraph.division()),
-        "ecount simplified:",ecount(subgraph.simplified()),"\n coop:",coop,sep="  ")
-  })
+#   judges.coop<-reactive({
+#   n.judges<-length(unique(subset.judges()$JudgeName))
+#   coop.array<-count(subset.judges(),"judgmentID")$freq
+#   coop<-ecount(subgraph.simplified())/max.unique.links(n.judges,coop.array)
+#   paste("vcount:",vcount(subgraph.division()),"ecount",ecount(subgraph.division()),
+#         "ecount simplified:",ecount(subgraph.simplified()),"\n coop:",coop,sep="  ")
+#   })
 
+  judges.coop.court<-reactive({
+    g<-subgraph.simplified.court()
+    div.vect<-as.vector(E(g)$DivisionCode)
+    div.un<-unique(unlist(div.vect))
+    temp<-sapply(seq(length(div.un)),function(x) {
+      sub.judgments.div<-subset(subset.judgments.court(),DivisionCode==div.un[x])
+      g.div<-simplify(graph.data.frame(sub.judgments.div,directed = F,vertices=NULL))
+      sub<-subset(subset.judges.court(), DivisionCode==div.un[x])
+      n.judges<-length(unique(sub$JudgeName))
+      coop.array<-count(sub,"judgmentID")$freq
+      coop<-ecount(g.div)/max.unique.links(n.judges,coop.array)
+    })
+    paste("vcount:",vcount(subgraph.court()),"ecount",ecount(subgraph.court()),
+          "ecount simplified:",ecount(subgraph.simplified.court()),"\n coop:",paste(temp,sep=";"),sep="  ")
+})
+  
+  s.dist<-reactive({
+    s<-count(subset.judges.court(),"judgmentID")$freq
+    as.data.frame(s)
+  })
+  
   k.dist<-reactive({
-    k<-degree(subgraph.simplified())
+    k<-degree(subgraph.simplified.court())
     as.data.frame(k)
   })
   
   w.dist<-reactive({
-    data.frame(w=E(subgraph.simplified())$weight)
+    data.frame(w=E(subgraph.simplified.court())$weight)
   })
   
-  trans.dist<-reactive({
-    t<-transitivity(subgraph.simplified(),"local",isolates = "zero")
-    data.frame(clust=t)
+#   trans.dist<-reactive({
+#     t<-transitivity(subgraph.simplified.court(),"local",isolates = "zero")
+#     data.frame(clust=t)
+#   })
+  
+  judgments.year<-reactive({
+    df<-count(subset.judgments.court(),"judgmentYear")
+    names(df)<-c("year","number.judgments")
+    df
   })
   
   max.component<-reactive({
-    g<-subgraph.division()
+    g<-subgraph.court()
     g.comp<-t(sapply(unique(E(g)$judgmentYear),function(x) {
       g.sub<-subgraph.edges(g,E(g)[E(g)$judgmentYear==x],delete.vertices = T)
       g.sub<-simplify(g.sub)
@@ -125,47 +195,76 @@ shinyServer(function(input, output) {
     g.comp
   })
   
-judges.year<-reactive({
-  df<-count(subset.judges(),"judgmentYear")
-  names(df)<-c("year","number.judges")
-  df
-})
+  judges.year<-reactive({
+    df<-count(subset.judges.court(),"judgmentYear")
+    names(df)<-c("year","number.judges")
+    df
+  })
 
   output$table1<-renderDataTable({judges.coop.year()})
-  #output$table1<-renderDataTable({as.data.frame(E(subgraph.division())$judgmentYear)})
-  output$text1<-renderText({judges.coop()})
-  output$plot.net <- renderPlot({
+  output$text1<-renderText({judges.coop.court()})
+  
+output$plot.net <- renderPlot({
     lay<-layout.fruchterman.reingold(subgraph.simplified())
     plog(subgraph.simplified(),lay)
   },width=400,height=400)
+
+plot.net2 <- reactive({
+  lay<-layout.fruchterman.reingold(subgraph.simplified.court())
+  list<-subgraph.mark.list()[-length(subgraph.mark.list())]
+  plog(subgraph.simplified.court(),lay,list)
   
-  plot.k <- reactive({
+})#,width=400,height=400)
+
+plot.legend <- reactive({
+  plog.legend(subgraph.mark.list())  
+})#,width=400,height=400)
+
+output$plot.graph<-renderPlot({
+  par(mfrow=c(1,2))
+  plot.net2()
+  plot.legend()
+},width=600,height=400)
+
+plot.k <- reactive({
     ggplot(k.dist(),aes(x=k))+geom_histogram()
   })
   
-  plot.w <- reactive({
+plot.w <- reactive({
     ggplot(w.dist(),aes(x=w))+geom_histogram()
   })
   
-  plot.t <- reactive({
-    ggplot(trans.dist(),aes(x=clust))+geom_histogram()
-  })
+# plot.t <- reactive({
+#     ggplot(trans.dist(),aes(x=clust))+geom_histogram()
+#   })
   
-  plot.comp <- reactive({
+plot.s<-reactive({
+    ggplot(s.dist(),aes(x=s)) + geom_histogram()
+  })
+
+plot.comp <- reactive({
     ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()
   })
   
-  plot.judges <- reactive({
+plot.judges <- reactive({
     ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()
   })
 
 plot.coop<- reactive({
-  ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()
-})
-
-  output$plot.multi<-renderPlot({
-    multiplot(plot.comp(),plot.judges(),plot.coop(),plot.k(),plot.w(),plot.t(),cols=2)
+    ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()
   })
+
+plot.judgments <- reactive({
+    ggplot(judgments.year(),aes(x=year,y=number.judgments))+geom_line()
+  })
+
+output$plot.top.chart<-renderPlot({
+  ggplot(judges.top.court(),aes(x=N.of.judgments,y=JudgeName))+geom_point()
+})
+  output$plot.multi<-renderPlot({
+    multiplot(plot.comp(),plot.judges(),plot.judgments(),plot.coop(),plot.k(),plot.w(),plot.s(),cols=2)
+  })
+
 #   output$plot2<-renderGvis({
 #     #no.rand<-data.frame(year=seq(1990,2015,length.out=26),number=seq(30,100,length.out = 26))
 #     g<-gvisLineChart(division.coop(),xvar="year",yvar="wsp",chartid = "Chart1")

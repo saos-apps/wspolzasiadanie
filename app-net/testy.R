@@ -105,11 +105,129 @@ ggmap(map)
 par(new=T)
 plog(g.mob,as.matrix(gcoord)) #mapa dla całej PL
 
+#przyporządkowanie płci
 
+subLast <- function(x){
+  tolower(substr(x, nchar(x), nchar(x)))
+}
 
+options(stringsAsFactors = F)
+j.names<-data.frame(name=as.character(unique(judges$JudgeName)))
+temp<-as.data.frame(t(sapply(seq(nrow(j.names)),function(x) {t<-strsplit(j.names$name[x]," ");c(unlist(t)[1],unlist(t)[2])})))
+names(temp)<-c("name","surname")
+temp$sex<-NA
 
-  
+library(httr)
+url<-"http://www.behindthename.com/names/gender/masculine/usage/polish"
+html2=GET(url)
+cont<-content(html2,as="text")
+parsed.html=htmlParse(cont,asText=T)
+names.male<-xpathSApply(parsed.html,"//div/b/a",xmlValue)
+names.male<-data.frame(name=unlist(lapply(names.male,function(x) as.character(unlist(strsplit(x," "))[1]))))
+names.male<-tolower(names.male[,1])
+names.male<-names.male[-which(names.male=="maria")]
+url<-"http://www.behindthename.com/names/gender/feminine/usage/polish"
+html2=GET(url)
+cont<-content(html2,as="text")
+parsed.html=htmlParse(cont,asText=T)
+names.female<-xpathSApply(parsed.html,"//div/b/a",xmlValue)
+names.female<-data.frame(name=unlist(lapply(names.female,function(x) as.character(unlist(strsplit(x," "))[1]))))
+names.female<-tolower(names.female[,1])
+
+temp2<-temp
+sapply(names.male,function(x) temp2$sex[which(tolower(temp2$name)==x)]<<-"M")
+sapply(names.female,function(x) temp2$sex[which(tolower(temp2$name)==x)]<<-"F")
+sapply(names.male,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"M")
+sapply(names.female,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"F")
+temp2$sex[which(subLast(temp2$name)=="a" & is.na(temp2$sex) & nchar(temp2$name)>1)]<-"F"
+temp2$sex[which(subLast(temp2$surname)=="a" & is.na(temp2$sex)  & nchar(temp2$name)>1)]<-"F"
+temp2$name<-sub("/*-/*","",temp2$name,ignore.case = T)
+temp2$name<-sub("/*[.]/*","",temp2$name,ignore.case = T)
+temp2$name<-sub("/*sso/*","",temp2$name,ignore.case = T)
+temp2$name<-sub("/*ssa/*","",temp2$name,ignore.case = T)
+temp2$name<-sub("/*del/*","",temp2$name,ignore.case = T)
+temp2$surname<-sub("/*-/*","",temp2$surname,ignore.case = T)
+temp2$surname<-sub("/*[.]/*","",temp2$surname,ignore.case = T)
+temp2$surname<-sub("/*sso/*","",temp2$surname,ignore.case = T)
+temp2$surname<-sub("/*ssa/*","",temp2$surname,ignore.case = T)
+temp2$surname<-sub("/*del/*","",temp2$surname,ignore.case = T)
+temp2$name<-sub("/*so/*","",temp2$name,ignore.case = T)
+temp2$name<-sub("/*sa/*","",temp2$name,ignore.case = T)
+temp2$surname<-sub("/*so/*","",temp2$surname,ignore.case = T)
+temp2$surname<-sub("/*sa/*","",temp2$surname,ignore.case = T)
+
+sapply(names.male,function(x) temp2$sex[which(tolower(temp2$name)==x  & is.na(temp2$sex))]<<-"M")
+sapply(names.female,function(x) temp2$sex[which(tolower(temp2$name)==x  & is.na(temp2$sex))]<<-"F")
+sapply(names.male,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"M")
+sapply(names.female,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"F")
+temp2$sex[which(subLast(temp2$name)=="a" & is.na(temp2$sex)  & nchar(temp2$name)>1)]<-"F"
+temp2$sex[which(subLast(temp2$surname)=="a" & is.na(temp2$sex)  & nchar(temp2$name)>1)]<-"F"
+
 ## typy spraw?
 t.un<-unique(types$judgmentType)
 types.list<-list(1,2,3,4,5)
 names(types.list)<-c(t.un,"ALL")
+
+## ile sędziów w więcej niż 1 wydziale/izbie?
+
+head(judges)
+judges2<-sqldf("select distinct JudgeName, CourtCode, DivisionCode from judges")
+c1<-count(judges2,c("JudgeName","CourtCode"))
+
+#mark group po wydziałach
+
+judges.net.court<-subset(judges.net,CourtCode== 15500000)
+g.court<-graph.data.frame(judges.net.court,directed = F,vertices=NULL)
+g.s<-simplify(g.court,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+
+div.un<-unique(unlist(div.vect))
+ymax<-length(div.un)
+div.vect<-as.vector(E(g.s)$DivisionCode)
+list<-lapply(seq(ymax),function(y) {
+  which.div<-sapply(seq(ecount(g.s)),function(x) div.un[y] %in% unique(div.vect[[x]]))
+  v<-get.edges(g.s,E(g.s)[which.div])
+  unique(c(v[,1],v[,2]))  
+})
+
+names(list)<-rainbow(length(div.un))
+list$labels<-div.un
+list2<-list[-length(list)]
+plot.igraph(g.s,mark.groups =list2,mark.col=names(list2))
+
+g.leg<-graph.empty(3,F)
+V(g.leg)$label=div.un
+V(g.leg)$color=names(list)
+lay.leg<-matrix(c(rep(0,3),seq(1,3)),byrow = F,nrow = 3)
+plot.igraph(g.leg,vertex.label.dist=1,layout=lay.leg)
+
+judges.sub<-subset(judges,CourtCode==15500000)
+judgments.sub<-subset(judges.net,CourtCode==15500000)
+# coop dla całego sądu
+
+g<-g.s
+div.vect<-as.vector(E(g)$DivisionCode)
+div.un<-unique(unlist(div.vect))
+years<-unique(judges.sub$judgmentYear)
+list1<-as.data.frame(t(sapply(years,function(x){
+  x<-2012
+  sub.judges<-subset(judges.sub,judgmentYear==x)
+  n.judges<-length(unique(judges.sub$JudgeName))
+  sub.judgments<-subset(judgments.sub,judgmentYear==x)
+  g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+  coop.array<-count(judges.sub,"judgmentID")$freq
+  coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
+  c(x,coop)
+})))
+names(list1)<-c("year","coop")
+list1
+
+#dotchart
+
+htop<-head(top,10)
+htop$JudgeName<-as.vector(htop$JudgeName)
+table1 <- table(htop$JudgeName)
+c<-sapply(seq(10),function(x) which(names(table1)==htop$JudgeName[x]))
+levels1 <- names(table1)[rev(c)]
+htop$JudgeName <- factor(htop$JudgeName, levels = levels1)
+
+gdot<-ggplot(htop, aes(y=JudgeName,x=freq)) + geom_point()
