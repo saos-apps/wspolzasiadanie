@@ -14,7 +14,7 @@ fluidPage(
     ),
     mainPanel(
       tabsetPanel(
-        tabPanel("Summary", textOutput("text1")), 
+        tabPanel("Summary", textOutput("text1"),dataTableOutput("table1")), 
         tabPanel("Net", plotOutput("plot.graph")), 
         tabPanel("Stats", plotOutput("plot.multi")),
         tabPanel("Top chart",  plotOutput("plot.top.chart"))

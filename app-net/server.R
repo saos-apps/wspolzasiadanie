@@ -135,6 +135,9 @@ shinyServer(function(input, output) {
   
   judges.coop.year<-reactive({
     years<-unique(subset.judges.court()$judgmentYear)
+    if(ecount(subgraph.simplified.court())==0)
+      list1=NULL
+    else{
     list1<-as.data.frame(t(sapply(years,function(x){
       sub.judges<-subset(subset.judges.court(),judgmentYear==x)
       n.judges<-length(unique(sub.judges$JudgeName))
@@ -145,6 +148,7 @@ shinyServer(function(input, output) {
       c(x,coop)
     })))
     names(list1)<-c("year","coop")
+    }
     list1
   })
 
@@ -178,12 +182,14 @@ shinyServer(function(input, output) {
   })
   
   k.dist<-reactive({
-    k<-degree(subgraph.simplified.court())
+    k<-as.vector(degree(subgraph.simplified.court()))
     as.data.frame(k)
   })
   
   w.dist<-reactive({
-    data.frame(w=E(subgraph.simplified.court())$weight)
+    
+    if(ecount(subgraph.simplified.court())==0) w=0 else w=as.vector(E(subgraph.simplified.court())$weight)
+    data.frame(w=w)
   })
   
 #   trans.dist<-reactive({
@@ -192,13 +198,18 @@ shinyServer(function(input, output) {
 #   })
   
   judgments.year<-reactive({
-    df<-count(subset.judgments.court(),"judgmentYear")
+    sub<-subset.judges.court()[!duplicated(subset.judges.court()$judgmentID),]
+    df<-count(sub,"judgmentYear")
     names(df)<-c("year","number.judgments")
     df
   })
   
   max.component<-reactive({
+    
     g<-subgraph.court()
+    if(ecount(g)==0)
+      g.comp=NULL
+    else {
     g.comp<-t(sapply(unique(E(g)$judgmentYear),function(x) {
       g.sub<-subgraph.edges(g,E(g)[E(g)$judgmentYear==x],delete.vertices = T)
       g.sub<-simplify(g.sub)
@@ -207,16 +218,19 @@ shinyServer(function(input, output) {
     }))
     g.comp<-as.data.frame(g.comp)
     names(g.comp)<-c("year","size.max.component")
+    }
     g.comp
   })
   
   judges.year<-reactive({
-    df<-count(subset.judges.court(),"judgmentYear")
+    temp<-count(subset.judges.court(),c("JudgeName","judgmentYear"))
+    names(temp)[3]<-"dd"
+    df<-count(temp,"judgmentYear")
     names(df)<-c("year","number.judges")
     df
   })
 
-  output$table1<-renderDataTable({judges.coop.year()})
+  output$table1<-renderDataTable({max.component()})
   output$text1<-renderText({judges.coop.court()})
   
 output$plot.net <- renderPlot({
@@ -241,7 +255,7 @@ output$plot.graph<-renderPlot({
 })#,width=800,height=800)
 
 plot.k <- reactive({
-    if(nrow(k.dist()ggplot(k.dist(),aes(x=k))+geom_histogram()
+    ggplot(k.dist(),aes(x=k))+geom_histogram()
   })
   
 plot.w <- reactive({
@@ -257,6 +271,9 @@ plot.s<-reactive({
   })
 
 plot.comp <- reactive({
+  if(is.null(max.component()))
+    ggplot(data.frame(x=0,y=5,t="No data to plot"),aes(x=x,y=y,label=t)) + geom_text(size=20)
+  else
     ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()
   })
   
@@ -265,6 +282,9 @@ plot.judges <- reactive({
   })
 
 plot.coop<- reactive({
+  if(is.null(judges.coop.year()))
+    ggplot(data.frame(x=0,y=5,t="No data to plot"),aes(x=x,y=y,label=t)) + geom_text(size=20)
+  else
     ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()
   })
 
@@ -276,7 +296,8 @@ output$plot.top.chart<-renderPlot({
   ggplot(judges.top.court(),aes(x=N.of.judgments,y=JudgeName))+geom_point()
 })
   output$plot.multi<-renderPlot({
-    multiplot(plot.comp(),plot.judges(),plot.judgments(),plot.coop(),plot.k(),plot.w(),plot.s(),cols=2)
+    #multiplot(plot.comp(),plot.judges(),plot.coop(),plot.k(),plot.w(),plot.s(),cols=2)
+    multiplot(plot.k(),plot.w(),plot.s(),plot.comp(),plot.judges(),plot.judgments(),plot.coop(),cols=2)
   })
 
 #   output$plot2<-renderGvis({
