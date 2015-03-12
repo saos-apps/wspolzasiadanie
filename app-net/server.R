@@ -7,6 +7,7 @@ require(WDI)
 require(RgoogleMaps)
 require(igraph)
 require(plyr)
+require(data.table)
 # server.R
 source("funkcje.R")
 judgments<-read.table("data/judgments.csv")
@@ -53,10 +54,11 @@ shinyServer(function(input, output) {
   
   judges.top.court<-reactive({
     temp<-count(subset.judges.court(),"JudgeName")
-    top<-head(temp[order(temp$freq,decreasing = T),],10)
-    top$JudgeName<-as.vector(top$JudgeName)
+    temp<-subset(temp,!is.na(temp$JudgeName))
+    top<-head(temp[order(temp$freq,decreasing = T),],min(10,nrow(temp)))
+    top$JudgeName<-sapply(as.character(top$JudgeName),function(x) paste(unlist(strsplit(x," "))[1:2],collapse=" "))
     table1 <- table(top$JudgeName)
-    c<-sapply(seq(10),function(x) which(names(table1)==top$JudgeName[x]))
+    c<-sapply(seq(min(10,nrow(temp))),function(x) which(names(table1)==top$JudgeName[x]))
     levels1 <- names(table1)[rev(c)]
     top$JudgeName <- factor(top$JudgeName, levels = levels1)
     names(top)[2]<-"N.of.judgments"
@@ -69,10 +71,15 @@ shinyServer(function(input, output) {
 #   })
   
   subgraph.court<-reactive({
-    g<-graph.data.frame(subset.judgments.court(),directed = F,vertices=NULL)
+    #vert<-subset.judges.court()[!duplicated(subset.judges.court()$JudgeName),c("JudgeName","JudgeSex")]
+    dt<-data.table(subset.judges.court())
+    vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
+    vert$DivisionCode<-sapply(vert$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
+    g<-graph.data.frame(subset.judgments.court(),directed = F,vertices=vert)
+    V(g)$vertex.shape<-NA
+    V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
+    V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
     g
-    
-    
   })
 #   
 #   subgraph.simplified<-reactive({
@@ -88,18 +95,26 @@ shinyServer(function(input, output) {
     })
     
   subgraph.mark.list<-reactive({
+    
     g<-subgraph.simplified.court()
-    div.vect<-as.vector(E(g)$DivisionCode)
-    div.un<-unique(unlist(div.vect))
-    ymax<-length(div.un)
-    list<-lapply(seq(ymax),function(y) {
-    which.div<-sapply(seq(ecount(g)),function(x) div.un[y] %in% unique(div.vect[[x]]))
-    v<-get.edges(g,E(g)[which.div])
-    unique(c(v[,1],v[,2]))
-    })
+    div.un<-unique(unlist(V(g)$DivisionCode))
+    list<-sapply(div.un,function(x) which(V(g)$DivisionCode==x))
     names(list)<-rainbow(length(div.un))
     list$labels<-div.un
     list
+#     
+#     g<-subgraph.simplified.court()
+#     div.vect<-as.vector(E(g)$DivisionCode)
+#     div.un<-unique(unlist(div.vect))
+#     ymax<-length(div.un)
+#     list<-lapply(seq(ymax),function(y) {
+#     which.div<-sapply(seq(ecount(g)),function(x) div.un[y] %in% unique(div.vect[[x]]))
+#     v<-get.edges(g,E(g)[which.div])
+#     unique(c(v[,1],v[,2]))
+#     })
+#     names(list)<-rainbow(length(div.un))
+#     list$labels<-div.un
+#     list
   })
   
   
@@ -213,7 +228,6 @@ plot.net2 <- reactive({
   lay<-layout.fruchterman.reingold(subgraph.simplified.court())
   list<-subgraph.mark.list()[-length(subgraph.mark.list())]
   plog(subgraph.simplified.court(),lay,list)
-  
 })#,width=400,height=400)
 
 plot.legend <- reactive({
@@ -224,10 +238,10 @@ output$plot.graph<-renderPlot({
   par(mfrow=c(1,2))
   plot.net2()
   plot.legend()
-},width=600,height=400)
+})#,width=800,height=800)
 
 plot.k <- reactive({
-    ggplot(k.dist(),aes(x=k))+geom_histogram()
+    if(nrow(k.dist()ggplot(k.dist(),aes(x=k))+geom_histogram()
   })
   
 plot.w <- reactive({

@@ -13,25 +13,34 @@ fluidPage(
      # selectInput("select.year",label=h3("Wybierz rok"),choices=as.list(seq(1990,2015)))
     ),
     mainPanel(
-      #dataTableOutput("text"),
-      textOutput("text1"),
-      #plotOutput("plot.net"),
-      plotOutput("plot.graph"),
-      #plotOutput("plot.comp"),
-      #plotOutput("plot.judges"),
-      plotOutput("plot.multi"),
-      plotOutput("plot.top.chart")
-#       plotOutput("plot.k"),
-#       plotOutput("plot.w"),
-#       plotOutput("plot.t"),
-#       plotOutput("plot.s"),
-#       plotOutput("plot.comp"),
-#       plotOutput("plot.judges"),
-#       plotOutput("plot.coop"),
-#       plotOutput("plot.judgments")
-      #dataTableOutput("table1")
-    #  htmlOutput("plot2")
+      tabsetPanel(
+        tabPanel("Summary", textOutput("text1")), 
+        tabPanel("Net", plotOutput("plot.graph")), 
+        tabPanel("Stats", plotOutput("plot.multi")),
+        tabPanel("Top chart",  plotOutput("plot.top.chart"))
+      )
     )
+    
+#     mainPanel(
+#       #dataTableOutput("text"),
+#       textOutput("text1"),
+#       #plotOutput("plot.net"),
+#       plotOutput("plot.graph"),
+#       #plotOutput("plot.comp"),
+#       #plotOutput("plot.judges"),
+#       plotOutput("plot.multi"),
+#       plotOutput("plot.top.chart")
+# #       plotOutput("plot.k"),
+# #       plotOutput("plot.w"),
+# #       plotOutput("plot.t"),
+# #       plotOutput("plot.s"),
+# #       plotOutput("plot.comp"),
+# #       plotOutput("plot.judges"),
+# #       plotOutput("plot.coop"),
+# #       plotOutput("plot.judgments")
+#       #dataTableOutput("table1")
+#     #  htmlOutput("plot2")
+#     )
     
   )
 )

@@ -1,3 +1,4 @@
+require(data.table)
 require(ggmap)
 require(plyr)
 require(saos)
@@ -10,6 +11,8 @@ require(sqldf)
 require(date)
 require(stringi)
 require(igraph)
+require(XML)
+require(httr)
 #install_github('ramnathv/rCharts')
 #install_github('ramnathv/rMaps')
 
@@ -47,7 +50,7 @@ courts<-sqldf("select c.* , l.lon,l.lat from courts c
 
 ## stworzenie sieci współzasiadania i 
 
-judges.net<-sqldf("select j1.JudgeName as name1, j2.JudgeName as name2, j1.judgmentID, j1.judgmentDate,j1.judgmentYear, j1.specialRoles as specialRole1, j2.specialRoles as specialRole2,
+judges.net<-sqldf("select j1.JudgeName as name1, j2.JudgeName as name2,j1.JudgeSex as Sex1,j2.JudgeSex as Sex2, j1.judgmentID, j1.judgmentDate,j1.judgmentYear, j1.specialRoles as specialRole1, j2.specialRoles as specialRole2,
 j1.CourtCode, j1.DivisionCode from judges j1
 inner join judges j2 on j1.judgmentID=j2.judgmentID and j1.JudgeName<>j2.JudgeName")
                   
@@ -70,10 +73,14 @@ dev.off()
 ## współpraca sędziów - test dla jednego sądu 15502000
 
 s.judgments<-subset(judgments,CourtCode==15502000)
-s.judges<-subset(judges,CourtCode==15502000)
+s.judges<-subset(judges,CourtCode==15502000,c("JudgeName","JudgeSex"))
+s.judges<-s.judges[!duplicated(s.judges$JudgeName),]
 s.judges.net<-subset(judges.net,CourtCode==15502000)
-g1<-graph.data.frame(s.judges.net,directed = F,vertices=NULL)
+g1<-graph.data.frame(s.judges.net,directed = F,vertices=s.judges)
 g1s<-simplify(g1,remove.multiple = T,remove.loops = T, edge.attr.comb ="concat")
+V(g1s)$vertex.shape<-ifelse(V(g1s)$JudgeSex=="M","ftriangle",ifelse(V(g1s)$JudgeSex=="F","fcircle","fstar"))
+V(g1s)$vertex.shape[which(is.na(V(g1s)$vertex.shape))]<-"fstar"
+
 no.judges<-length(V(g))
 judges.per.case<-count(s.judges,"judgmentID")
 judges.per.case<-subset(judges.per.case,freq>1)
@@ -105,19 +112,21 @@ ggmap(map)
 par(new=T)
 plog(g.mob,as.matrix(gcoord)) #mapa dla całej PL
 
-#przyporządkowanie płci
+#przyporządkowanie płci - 96.2% udało się! czekam jeszcze na bazę nazwisk w odmianie
+#potem spróbuję jeszcze z końcówkami
+#max 1.2% dla kobiet z przyporządkowanych może być źle (przypisanie po końcówce "a")
 
 subLast <- function(x){
   tolower(substr(x, nchar(x), nchar(x)))
 }
-
 options(stringsAsFactors = F)
 j.names<-data.frame(name=as.character(unique(judges$JudgeName)))
+llist1<-lapply(j.names$name,function(x) which(judges$JudgeName==x))
 temp<-as.data.frame(t(sapply(seq(nrow(j.names)),function(x) {t<-strsplit(j.names$name[x]," ");c(unlist(t)[1],unlist(t)[2])})))
 names(temp)<-c("name","surname")
 temp$sex<-NA
 
-library(httr)
+
 url<-"http://www.behindthename.com/names/gender/masculine/usage/polish"
 html2=GET(url)
 cont<-content(html2,as="text")
@@ -133,39 +142,64 @@ parsed.html=htmlParse(cont,asText=T)
 names.female<-xpathSApply(parsed.html,"//div/b/a",xmlValue)
 names.female<-data.frame(name=unlist(lapply(names.female,function(x) as.character(unlist(strsplit(x," "))[1]))))
 names.female<-tolower(names.female[,1])
+#wiki
+url<-"http://pl.wiktionary.org/wiki/Indeks:Polski_-_Imiona"
+html2=GET(url)
+cont<-content(html2,as="text")
+parsed.html=htmlParse(cont,asText=T)
+names<-xpathSApply(parsed.html,"//ul/li/a",xmlValue)
+names.female2<-tolower(names[(which(names=="Abigail")):(which(names=="Żywisława"))])
+names.male2<-tolower(names[(which(names=="Abdon")):(which(names=="Żytek"))])
+names.male<-unique(c(names.male,names.male2))
+names.female<-unique(c(names.female,names.female2))
+                   
+sapply(names.male,function(x) temp$sex[which(tolower(temp$name)==x)]<<-"M")
+sapply(names.female,function(x) temp$sex[which(tolower(temp$name)==x)]<<-"F")
+sapply(names.male,function(x) temp$sex[which(tolower(temp$surname)==x & is.na(temp$sex))]<<-"M")
+sapply(names.female,function(x) temp$sex[which(tolower(temp$surname)==x & is.na(temp$sex))]<<-"F")
+left<-which(is.na(temp$sex))
+tlist<-sapply(names.male,function(x) {
+  #w<-which(sapply(temp$name[left],function(y) regexec(x,y,ignore.case = T)[[1]][1]>0)==TRUE)
+  w<-which((regexpr(x,temp$name[left],ignore.case = T)>0)==TRUE)
+  temp$sex[left[w]]<<-"M"
+  })
+left<-which(is.na(temp$sex))
+tlist<-sapply(names.male,function(x) {
+  w<-which((regexpr(x,temp$surname[left],ignore.case = T)>0)==TRUE)
+  temp$sex[left[w]]<<-"M"
+})
+left<-which(is.na(temp$sex))
+tlist<-sapply(names.female,function(x) {
+  w<-which((regexpr(x,temp$name[left],ignore.case = T)>0)==TRUE)
+  temp$sex[left[w]]<<-"F"
+})
+left<-which(is.na(temp$sex))
+tlist<-sapply(names.female,function(x) {
+  w<-which((regexpr(x,temp$surname[left],ignore.case = T)>0)==TRUE)
+  temp$sex[left[w]]<<-"F"
+})
+left<-which(is.na(temp$sex))
+temp$name<-sub("/*[.]/*","",temp$name,ignore.case = T)
+temp$surname<-sub("/*[.]/*","",temp$surname,ignore.case = T)
+# temp$name<-sub("/*-/*","",temp$name,ignore.case = T)
+# temp$name<-sub("/*sso/*","",temp$name,ignore.case = T)
+# temp$name<-sub("/*ssa/*","",temp$name,ignore.case = T)
+# temp$name<-sub("/*del/*","",temp$name,ignore.case = T)
+# temp$surname<-sub("/*-/*","",temp$surname,ignore.case = T)
+# temp$surname<-sub("/*sso/*","",temp$surname,ignore.case = T)
+# temp$surname<-sub("/*ssa/*","",temp$surname,ignore.case = T)
+# temp$surname<-sub("/*del/*","",temp$surname,ignore.case = T)
+# temp$name<-sub("/*so/*","",temp$name,ignore.case = T)
+# temp$name<-sub("/*sa/*","",temp$name,ignore.case = T)
+# temp$surname<-sub("/*so/*","",temp$surname,ignore.case = T)
+# temp$surname<-sub("/*sa/*","",temp$surname,ignore.case = T)
+temp$sex[which(subLast(temp$name)=="a" & is.na(temp$sex) & nchar(temp$name)>1)]<-"F" #niedokładne
+temp$sex[which(subLast(temp$surname)=="a" & is.na(temp$sex)  & nchar(temp$surname)>1)]<-"F" #niedokładne
+left<-which(is.na(temp$sex))
+judges$JudgeSex<-NA
+lapply(seq(nrow(temp)),function(x) judges$JudgeSex[llist1[[x]]]<<-temp$sex[x])
 
-temp2<-temp
-sapply(names.male,function(x) temp2$sex[which(tolower(temp2$name)==x)]<<-"M")
-sapply(names.female,function(x) temp2$sex[which(tolower(temp2$name)==x)]<<-"F")
-sapply(names.male,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"M")
-sapply(names.female,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"F")
-temp2$sex[which(subLast(temp2$name)=="a" & is.na(temp2$sex) & nchar(temp2$name)>1)]<-"F"
-temp2$sex[which(subLast(temp2$surname)=="a" & is.na(temp2$sex)  & nchar(temp2$name)>1)]<-"F"
-temp2$name<-sub("/*-/*","",temp2$name,ignore.case = T)
-temp2$name<-sub("/*[.]/*","",temp2$name,ignore.case = T)
-temp2$name<-sub("/*sso/*","",temp2$name,ignore.case = T)
-temp2$name<-sub("/*ssa/*","",temp2$name,ignore.case = T)
-temp2$name<-sub("/*del/*","",temp2$name,ignore.case = T)
-temp2$surname<-sub("/*-/*","",temp2$surname,ignore.case = T)
-temp2$surname<-sub("/*[.]/*","",temp2$surname,ignore.case = T)
-temp2$surname<-sub("/*sso/*","",temp2$surname,ignore.case = T)
-temp2$surname<-sub("/*ssa/*","",temp2$surname,ignore.case = T)
-temp2$surname<-sub("/*del/*","",temp2$surname,ignore.case = T)
-temp2$name<-sub("/*so/*","",temp2$name,ignore.case = T)
-temp2$name<-sub("/*sa/*","",temp2$name,ignore.case = T)
-temp2$surname<-sub("/*so/*","",temp2$surname,ignore.case = T)
-temp2$surname<-sub("/*sa/*","",temp2$surname,ignore.case = T)
-sapply(names.male,function(x) temp2$sex[which(tolower(temp2$name)==x  & is.na(temp2$sex))]<<-"M")
-sapply(names.female,function(x) temp2$sex[which(tolower(temp2$name)==x  & is.na(temp2$sex))]<<-"F")
-sapply(names.male,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"M")
-sapply(names.female,function(x) temp2$sex[which(tolower(temp2$surname)==x & is.na(temp2$sex))]<<-"F")
-temp2$sex[which(subLast(temp2$name)=="a" & is.na(temp2$sex)  & nchar(temp2$name)>1)]<-"F"
-temp2$sex[which(subLast(temp2$surname)=="a" & is.na(temp2$sex)  & nchar(temp2$name)>1)]<-"F"
-
-## typy spraw?
-t.un<-unique(types$judgmentType)
-types.list<-list(1,2,3,4,5)
-names(types.list)<-c(t.un,"ALL")
+write.table(judges,"app-net/data/judges.csv")
 
 ## ile sędziów w więcej niż 1 wydziale/izbie?
 
@@ -221,12 +255,59 @@ names(list1)<-c("year","coop")
 list1
 
 #dotchart
+courts[which(regexpr("Złot",courts$CourtName)>0),]
+judges.sub<-subset(judges,CourtCode==15501025)
+judgments.sub<-subset(judges.net,CourtCode==15501025)
 
-htop<-head(top,10)
-htop$JudgeName<-as.vector(htop$JudgeName)
-table1 <- table(htop$JudgeName)
-c<-sapply(seq(10),function(x) which(names(table1)==htop$JudgeName[x]))
+temp<-count(judges.sub,"JudgeName")
+temp<-subset(temp,!is.na(temp$JudgeName))
+top<-head(temp[order(temp$freq,decreasing = T),],min(10,nrow(temp)))
+top$JudgeName<-sapply(as.character(top$JudgeName),function(x) paste(unlist(strsplit(x," ")),collapse=" "))
+table1 <- table(top$JudgeName)
+c<-sapply(seq(min(10,nrow(temp))),function(x) which(names(table1)==top$JudgeName[x]))
 levels1 <- names(table1)[rev(c)]
-htop$JudgeName <- factor(htop$JudgeName, levels = levels1)
+top$JudgeName <- factor(top$JudgeName, levels = levels1)
+names(top)[2]<-"N.of.judgments"
+ggplot(top,aes(x=N.of.judgments,y=JudgeName))+geom_point()
 
-gdot<-ggplot(htop, aes(y=JudgeName,x=freq)) + geom_point()
+#error handle
+
+judges.sub<-subset(judges,CourtCode==15501025)
+judgments.sub<-subset(judges.net,CourtCode==15501025)
+
+#subgraph.court<-reactive({
+
+
+dt <- data.table(judges.sub)
+dt.out <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
+dt.out$DivisionCode<-sapply(dt.out$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
+
+  vert<-judges.sub[!duplicated(judges.sub$JudgeName),c("JudgeName","JudgeSex","DivisionCode")]
+  g<-graph.data.frame(judgments.sub,directed = F,vertices=dt.out)
+  V(g)$vertex.shape<-NA
+  V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
+  V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
+  g
+
+g<-simplify(g,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+E(g)$weight<-sapply(E(g)$CourtCode,length)
+g    
+
+#mark list
+div.un<-unique(unlist(V(g)$DivisionCode))
+div.vect<-as.vector(E(g)$DivisionCode)
+div.un<-unique(unlist(div.vect))
+ymax<-length(div.un)
+list<-lapply(seq(ymax),function(y) {
+  which.div<-sapply(seq(ecount(g)),function(x) div.un[y] %in% unique(div.vect[[x]]))
+  v<-get.edges(g,E(g)[which.div])
+  unique(c(v[,1],v[,2]))
+})
+
+div.un<-unique(unlist(V(g)$DivisionCode))
+list<-sapply(div.un,function(x) which(V(g)$DivisionCode==x))
+names(list)<-rainbow(length(div.un))
+list$labels<-div.un
+list
+}
+
