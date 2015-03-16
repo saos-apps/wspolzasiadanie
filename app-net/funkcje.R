@@ -99,7 +99,8 @@ plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.colo
 }
 
 plog<-function(g,layout1=layout.auto,list=NULL){
-  plot.igraph(g,vertex.size=3,vertex.label=NA,vertex.shape=V(g)$vertex.shape,edge.color="grey45",edge.width=1,edge.curved=TRUE,layout=layout1,mark.groups=list,mark.col=names(list))
+  plot.igraph(g,vertex.size=3,vertex.label=NA,vertex.shape=V(g)$vertex.shape,edge.color="grey45",edge.width=ifelse(E(g)$type=="real",1,0),
+              edge.curved=TRUE,layout=layout1,mark.groups=list,mark.col=names(list))
 }
 
 mycircle <- function(coords, v=NULL, params) {

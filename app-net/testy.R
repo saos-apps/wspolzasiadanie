@@ -65,7 +65,7 @@ par(new=T)
 plog(g.mob,as.matrix(gcoord)) #mapa dla całej PL
 
 #dotchart
-courts[which(regexpr("Wrocł",courts$CourtName)>0),]
+courts[which(regexpr("Wroc",courts$CourtName)>0),]
 judges.sub<-subset(judges,CourtCode==15502500)
 judgments.sub<-subset(judges.net,CourtCode==15502500)
 
@@ -82,8 +82,8 @@ ggplot(top,aes(x=N.of.judgments,y=JudgeName))+geom_point()
 
 #error handle
 
-judges.sub<-subset(judges,CourtCode==15501025)
-judgments.sub<-subset(judges.net,CourtCode==15501025)
+judges.sub<-subset(judges,CourtCode==15251000)
+judgments.sub<-subset(judges.net,CourtCode==15251000)
 
 dt <- data.table(judges.sub)
 dt.out <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
@@ -97,23 +97,35 @@ dt.out$DivisionCode<-sapply(dt.out$DivisionCode,function(x) unique(unlist(strspl
 
 g<-simplify(g,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
 E(g)$weight<-sapply(E(g)$CourtCode,length)
+E(g)$type="real"
+E(g)$weight=0
 g    
 
 #mark list
 div.un<-unique(unlist(V(g)$DivisionCode))
-div.vect<-as.vector(E(g)$DivisionCode)
-div.un<-unique(unlist(div.vect))
-ymax<-length(div.un)
-list<-lapply(seq(ymax),function(y) {
-  which.div<-sapply(seq(ecount(g)),function(x) div.un[y] %in% unique(div.vect[[x]]))
-  v<-get.edges(g,E(g)[which.div])
-  unique(c(v[,1],v[,2]))
-})
-
-div.un<-unique(unlist(V(g)$DivisionCode))
-list<-sapply(div.un,function(x) which(V(g)$DivisionCode==x))
+matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))
+list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
 names(list)<-rainbow(length(div.un))
 list$labels<-div.un
-list
-}
+
+layg<-layout.fruchterman.reingold(g,weights=E(g)$weight)
+plog(g,layg,list[-length(list)])
+
+gb<-g
+sapply(seq(length(div.un)),function(x) {
+vadd<-which(matrix[,x])
+c1<-t(combn(vadd,2))
+gb<<-add.edges(gb,c1)
+E(gb)$type[which(is.na(E(gb)$type))]<<-"fake"
+E(gb)$weight[which(is.na(E(gb)$weight))]<<-3
+#E(gb)$type[which(is.na(E(gb)$type))]<-"fake"
+#E(gb)$weight[which(is.na(E(gb)$weight))]<-3
+})
+
+gb<-simplify(gb,remove.multiple = F,remove.loops = T)
+laygb<-layout.fruchterman.reingold(gb,weights=E(gb)$weight)
+ul<-unlist(list[-length(list)])
+names(ul)<-substr(names(ul),1,9)
+ul<-as.list(ul)
+plog(gb,laygb,ul)
 

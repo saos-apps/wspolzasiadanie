@@ -90,33 +90,58 @@ shinyServer(function(input, output) {
   
   subgraph.simplified.court<-reactive({
     g<-simplify(subgraph.court(),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
-    E(g)$weight<-sapply(E(g)$CourtCode,length)
+    if(ecount(g)>0) E(g)$weight<-sapply(E(g)$CourtCode,length) else E(g)$weight=0
+    E(g)$type="real"
     g       
     })
     
-  subgraph.mark.list<-reactive({
+  subgraph.mark.matrix<-reactive({
     
     g<-subgraph.simplified.court()
     div.un<-unique(unlist(V(g)$DivisionCode))
-    list<-sapply(div.un,function(x) which(V(g)$DivisionCode==x))
-    names(list)<-rainbow(length(div.un))
-    list$labels<-div.un
-    list
-#     
+    matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))
+    matrix
+    
 #     g<-subgraph.simplified.court()
-#     div.vect<-as.vector(E(g)$DivisionCode)
-#     div.un<-unique(unlist(div.vect))
-#     ymax<-length(div.un)
-#     list<-lapply(seq(ymax),function(y) {
-#     which.div<-sapply(seq(ecount(g)),function(x) div.un[y] %in% unique(div.vect[[x]]))
-#     v<-get.edges(g,E(g)[which.div])
-#     unique(c(v[,1],v[,2]))
-#     })
+#     div.un<-unique(unlist(V(g)$DivisionCode))
+#     list<-sapply(div.un,function(x) which(V(g)$DivisionCode==x))
 #     names(list)<-rainbow(length(div.un))
 #     list$labels<-div.un
 #     list
   })
   
+  subgraph.mark.list<-reactive({
+    g<-subgraph.simplified.court()
+    div.un<-unique(unlist(V(g)$DivisionCode))
+    matrix<-subgraph.mark.matrix()
+    list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
+    names(list)<-rainbow(length(div.un))
+    list$labels<-div.un
+    #----
+    ul<-unlist(list[-length(list)])
+    names(ul)<-substr(names(ul),1,9)
+    ul<-as.list(ul)
+    ul$labels<-div.un
+    ul
+    #list
+  })
+  
+subgraph.final<-reactive({
+  gb<-subgraph.simplified.court()
+  div.un<-subgraph.mark.list()$labels
+  matrix<-subgraph.mark.matrix()
+  sapply(seq(length(div.un)),function(x) {
+    vadd<-which(matrix[,x])
+    c1<-t(combn(vadd,2))
+    gb<<-add.edges(gb,c1)
+    E(gb)$type[which(is.na(E(gb)$type))]<<-"fake"
+    E(gb)$weight[which(is.na(E(gb)$weight))]<<-3
+  })
+  gb<-simplify(gb,remove.multiple = F,remove.loops = T)
+})
+
+
+
   
 #   judges.coop.year<-reactive({
 #   years<-unique(subset.judges()$judgmentYear)
@@ -173,7 +198,7 @@ shinyServer(function(input, output) {
       coop<-ecount(g.div)/max.unique.links(n.judges,coop.array)
     })
     paste("vcount:",vcount(subgraph.court()),"ecount",ecount(subgraph.court()),
-          "ecount simplified:",ecount(subgraph.simplified.court()),"\n coop:",paste(temp,sep=";"),sep="  ")
+          "ecount simplified:",ecount(subgraph.final()),"\n coop:",paste(temp,sep=";"),sep="  ")
 })
   
   s.dist<-reactive({
@@ -239,9 +264,10 @@ output$plot.net <- renderPlot({
   },width=400,height=400)
 
 plot.net2 <- reactive({
-  lay<-layout.fruchterman.reingold(subgraph.simplified.court())
+  g<-subgraph.final()
+  lay<-layout.fruchterman.reingold(g,weights=E(g)$weight)
   list<-subgraph.mark.list()[-length(subgraph.mark.list())]
-  plog(subgraph.simplified.court(),lay,list)
+  plog(g,lay,list)
 })#,width=400,height=400)
 
 plot.legend <- reactive({
@@ -252,7 +278,7 @@ output$plot.graph<-renderPlot({
   par(mfrow=c(1,2))
   plot.net2()
   plot.legend()
-})#,width=800,height=800)
+},width=800,height=800)
 
 plot.k <- reactive({
     ggplot(k.dist(),aes(x=k))+geom_histogram()
