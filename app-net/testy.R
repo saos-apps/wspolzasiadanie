@@ -11,6 +11,7 @@ require(igraph)
 require(XML)
 require(httr)
 require(ggmap)
+require(RColorBrewer)
 judgments<-read.table("data/judgments.csv")
 judges<-read.table("data/judges.csv")
 divisions<-read.table("data/divisions.csv")
@@ -78,54 +79,197 @@ c<-sapply(seq(min(10,nrow(temp))),function(x) which(names(table1)==top$JudgeName
 levels1 <- names(table1)[rev(c)]
 top$JudgeName <- factor(top$JudgeName, levels = levels1)
 names(top)[2]<-"N.of.judgments"
-ggplot(top,aes(x=N.of.judgments,y=JudgeName))+geom_point()
 
-#error handle
+ggplot(judges.top.court(),aes(x=N.of.judgments,y=JudgeName))+geom_point(aes(size=N.of.judgments))+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")+geom_hline(aes(yintercept=JudgeName))
+ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+scale_size_continuous(range = c(5,20))+geom_segment(aes(x =0, y =10:1 , xend =(N.of.judgments-N.of.judgments/35), yend = 10:1),size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=10),axis.text.y  = element_text(angle=0, vjust=0.5, size=10),legend.position="none")
 
-judges.sub<-subset(judges,CourtCode==15251000)
-judgments.sub<-subset(judges.net,CourtCode==15251000)
+#pie chart
+courts[which(regexpr("Kędzierz",courts$CourtName)>0),]
+judges.sub<-subset(judges,CourtCode==15501515)
+judgments.sub<-subset(judges.net,CourtCode==15501515)
 
-dt <- data.table(judges.sub)
-dt.out <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
-dt.out$DivisionCode<-sapply(dt.out$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
-
-  g<-graph.data.frame(judgments.sub,directed = F,vertices=dt.out)
-  V(g)$vertex.shape<-NA
-  V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
-  V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
-  g
+dt<-data.table(judges.sub)
+vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
+vert$DivisionCode<-sapply(vert$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
+g<-graph.data.frame(judgments.sub,directed = F,vertices=vert)
+V(g)$vertex.shape<-NA
+V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
+V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
+g
 
 g<-simplify(g,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
-E(g)$weight<-sapply(E(g)$CourtCode,length)
+if(ecount(g)>0) E(g)$weight<-sapply(E(g)$CourtCode,length)
 E(g)$type="real"
-E(g)$weight=0
-g    
+g     
 
-#mark list
 div.un<-unique(unlist(V(g)$DivisionCode))
-matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))
+matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))  
+names<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+names<-addalpha(names,0.75)
+values<-lapply(V(g)$DivisionCode,function(x) rep(1/length(x),length(x)))
+colors<-lapply(seq(nrow(matrix)),function(x) names[matrix[x,]])
+V(g)$colour<-colors
+V(g)$pie.values<-values
+g
+
+lay<-layout.fruchterman.reingold(g,weights=E(g)$weight)
+plog.pie(g,layg)
+
+#mark.group
+#list<-sapply(seq(length(div.un)),function(x) setdiff(which(matrix[,x]),which(rowSums(matrix)>1)))
 list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
-names(list)<-rainbow(length(div.un))
+names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+names(list)<-addalpha(names(list),0.8)
 list$labels<-div.un
+cl<-clusters(g)
+ord<-order(cl$csize,decreasing = T)
 
-layg<-layout.fruchterman.reingold(g,weights=E(g)$weight)
-plog(g,layg,list[-length(list)])
-
-gb<-g
-sapply(seq(length(div.un)),function(x) {
-vadd<-which(matrix[,x])
-c1<-t(combn(vadd,2))
-gb<<-add.edges(gb,c1)
-E(gb)$type[which(is.na(E(gb)$type))]<<-"fake"
-E(gb)$weight[which(is.na(E(gb)$weight))]<<-3
-#E(gb)$type[which(is.na(E(gb)$type))]<-"fake"
-#E(gb)$weight[which(is.na(E(gb)$weight))]<-3
+list2<-sapply(list[-length(list)],function(x) {
+  a<-cl$membership[x]  
+  ll<-lapply(unique(cl$membership[x]),function(y){
+    x[which(a==y)]
+  })
 })
+list2<-unlist(list2,recursive = F)
+names(list2)<-substr(names(list2),1,9)
+list2$labels<-div.un
+plog(g,lay,list2[-length(list2)])
 
-gb<-simplify(gb,remove.multiple = F,remove.loops = T)
-laygb<-layout.fruchterman.reingold(gb,weights=E(gb)$weight)
-ul<-unlist(list[-length(list)])
-names(ul)<-substr(names(ul),1,9)
-ul<-as.list(ul)
-plog(gb,laygb,ul)
+#rozkład kobiet i mężczyzn
+judges.fm<-subset(judges.sub,!is.na(JudgeSex))
+sexc<-count(judges.fm,c("judgmentID","JudgeSex"))
+ids<-data.frame(judgmentID=unique(sexc$judgmentID))
+sexa<-sqldf("select i.judgmentID, f.freq as freqf, m.freq as freqm from ids i
+            left join sexc f on
+            f.judgmentID=i.judgmentID
+            and f.JudgeSex='F'
+            left join sexc m on
+            m.judgmentID=i.judgmentID
+            and m.JudgeSex='M'
+            ")
+sexa[is.na(sexa)]<-0
 
+ctemp<-count(judges.fm,c("JudgeName","JudgeSex"))
+sexcourt<-count(ctemp[-3],"JudgeSex")
+frac<-sexcourt$freq[sexcourt$JudgeSex=="F"]/(sexcourt$freq[sexcourt$JudgeSex=="F"]+sexcourt$freq[sexcourt$JudgeSex=="M"])
+
+
+sex.final<-transform(sexa,frac.female=freqf/(freqf+freqm))
+#vl<-round(mean(sex.final$frac.female),2)
+vl=round(frac,2)
+br<-seq(min(sex.final$frac.female),max(sex.final$frac.female),length.out=11)
+h<-hist(sex.final$frac.female,breaks=br)
+g<-ggplot(sex.final,aes(x=frac.female))+geom_histogram(breaks=br)+labs(x="Fraction of female judges in judgment team",title="Histogram of female judges preferences")
+g<-g+geom_segment(x =vl, y =0 , xend =vl, yend =Inf ,size=0.7,col="red")+geom_text(data=NULL,x=vl+0.15,y=max(h$counts),label=paste("Mean: ",vl,sep=""))
+g
+
+#infinite recursion problem
+
+courts[which(regexpr("Najw",courts$CourtName)>0),]
+judges.sub<-subset(judges,CourtCode==2)
+judgments.sub<-subset(judges.net,CourtCode==2)
+
+dt<-data.table(judges.sub)
+vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
+vert$DivisionCode<-sapply(vert$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
+g<-graph.data.frame(judgments.sub,directed = F,vertices=vert)
+V(g)$vertex.shape<-NA
+V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
+V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
+g
+
+g.sim<-simplify(g,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+if(ecount(g.sim)>0) E(g.sim)$weight<-sapply(E(g.sim)$CourtCode,length)
+E(g.sim)$type="real"
+g.sim
+
+div.un<-unique(unlist(V(g)$DivisionCode))
+matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))  
+names<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+names<-addalpha(names,0.75)
+values<-lapply(V(g)$DivisionCode,function(x) rep(1/length(x),length(x)))
+colors<-lapply(seq(nrow(matrix)),function(x) names[matrix[x,]])
+V(g)$colour<-colors
+V(g)$pie.values<-values
+
+lay<-layout.fruchterman.reingold(g.sim,weights=E(g.sim)$weight,area=10000*vcount(g.sim)^2,repulserad=100000*vcount(g.sim)^3)
+plog(g.sim,lay)
+
+  years<-unique(judges.sub$judgmentYear)
+  {if(ecount(g.sim)==0)
+    list1=NULL
+  else{
+    list1<-as.data.frame(t(sapply(years,function(x){
+      print(x)
+      x<-years[15]
+      sub.judges<-subset(judges.sub,judgmentYear==x)
+      n.judges<-length(unique(sub.judges$JudgeName))
+      sub.judgments<-subset(judgments.sub,judgmentYear==x)
+      g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
+      coop.array<-count(sub.judges,"judgmentID")$freq
+      coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
+      coop=ifelse(is.nan(coop),0,coop)
+      coop=ifelse(coop>1,1,coop)
+      c(x,coop)
+    })))
+    names(list1)<-c("year","coop")
+  }
+  }
+  list1
+
+
+max.unique.links<-function(njudges,array){
+  array2<-coop.array
+  njudges<-n.judges
+  array2<-sort(array2,T)
+  un.links<-choose(njudges,2)
+  
+  ordered<-1
+  nnext<-2
+{ if(length(array2)<=1000) {
+  #ordered<-fun1(array,njudges,ordered,nnext)
+  ret<-fun1(array2,njudges,ordered,nnext)
+  nnext<-ret$l2
+  ifelse(nnext>x*1000 | nnext>length(array2),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+}
+else
+{
+  for(x in 1:ceiling(length(array2)/1000))
+  {
+    #x<-3
+    ret<-fun1(array2[1:min(x*1000,length(array2))],njudges,ordered,nnext)
+    #nnext<-ordered[length(ordered)]
+    #ordered<-ordered[-length(ordered)]
+    nnext<-ret$l2
+    ifelse(nnext>x*1000 |nnext>length(array2),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+    if(sum(array2[ordered])==njudges) break
+  }
+}
+}
+
+exist.links<-sum(choose(array2[ordered],2),na.rm = T)
+pos.links<-sum(choose(array[-ordered],2)-choose(ceiling(array[-ordered]/2),2)-choose(floor(array[-ordered]/2),2))
+
+ifelse((exist.links+pos.links)<un.links,
+       c<-exist.links+pos.links,
+       c<-un.links
+)
+c
+}
+
+fun1<-function(array,njudges,order,nnext){
+{if(length(array)<nnext)
+  list(l1=order,l2=nnext)
+ else {if(sum(array[c(order,nnext)])<njudges)
+   return(fun1(array,njudges,c(order,nnext),nnext+1))
+   else
+   { if(sum(array[c(order,nnext)])>njudges)
+     return(fun1(array,njudges,order,nnext+2))
+     else
+       list(l1=order,l2=nnext)
+   }
+ }
+}
+}
+#{ if(nnext>length(array)) list(l1=order,l2=nnext) else list(l1=c(order,nnext),l2=nnext)}
+#  list(l1=order,l2=nnext)

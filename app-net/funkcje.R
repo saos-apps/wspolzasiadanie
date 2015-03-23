@@ -48,6 +48,31 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
+# addalpha()
+addalpha <- function(colors, alpha=1.0) {
+  r <- col2rgb(colors, alpha=T)
+  # Apply alpha
+  r[4,] <- alpha*255
+  r <- r/255.0
+  return(rgb(r[1,], r[2,], r[3,], r[4,]))
+}
+# colorRampPaletteAlpha()
+colorRampPaletteAlpha <- function(colors, n=32, interpolate='linear') {
+  # Create the color ramp normally
+  cr <- colorRampPalette(colors, interpolate=interpolate)(n)
+  # Find the alpha channel
+  a <- col2rgb(colors, alpha=T)[4,]
+  # Interpolate
+  if (interpolate=='linear') {
+    l <- approx(a, n=n)
+  } else {
+    l <- spline(a, n=n)
+  }
+  l$y[l$y > 255] <- 255 # Clamp if spline is > 255
+  cr <- addalpha(cr, l$y/255.0)
+  return(cr)
+}
+
 #1.funkcja color.graph koloruje wierzchołki i krawędzie grafu.
 #	bierzemy wierzchołki grupami, zaczynając od najbardziej licznej. Pierwsze 8 kolorów z palety Set2 jest używane do pokolorowania największych grup. Następnie używamy wybranych z Paired i Greys. Kolory razem z kształtami moga stworzyc max. 8+5x4=28 kombinacji, które nie będą się dublowały dla różnych grup. W tej sieci jest 25 grup.
 color.graph<-function(g){
@@ -90,7 +115,7 @@ plog.legend<-function(list){
   g.leg<-graph.empty(vc,F)
   V(g.leg)$label=list$labels
   V(g.leg)$color=names(list[-length(list)])
-  lay.leg<-matrix(c(rep(0,vc),seq(1,vc)),byrow = F,nrow = vc)
+  lay.leg<-matrix(c(seq(1,vc),rep(0,vc)),byrow = F,nrow = vc)
   plot.igraph(g.leg,vertex.label.dist=1,layout=lay.leg)
 }
 #4.funkcja rysująca sieć współpracy. Ustawiona stała wlk. wierzchołków, grubość krawędzi zależy od wagi.
@@ -100,7 +125,12 @@ plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.colo
 
 plog<-function(g,layout1=layout.auto,list=NULL){
   plot.igraph(g,vertex.size=3,vertex.label=NA,vertex.shape=V(g)$vertex.shape,edge.color="grey45",edge.width=ifelse(E(g)$type=="real",1,0),
-              edge.curved=TRUE,layout=layout1,mark.groups=list,mark.col=names(list))
+              edge.curved=TRUE,layout=layout1,mark.groups=list,mark.col=names(list),mark.shape=1,mark.expand=8)#,mark.border=NA)
+}
+
+plog.pie<-function(g,layout1=layout.auto){
+  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape="pie",vertex.pie=V(g)$pie.values,vertex.pie.color=V(g)$colour,edge.color="grey45",edge.width=ifelse(E(g)$type=="real",1,0),
+              edge.curved=TRUE,layout=layout1)
 }
 
 mycircle <- function(coords, v=NULL, params) {
@@ -198,20 +228,31 @@ add.vertex.shape("fstar", clip=igraph.shape.noclip,
                  plot=mystar, parameters=list(vertex.norays=5,vertex.frame.color=1,
                                               vertex.frame.width=1))
 
-max.unique.links<-function(judges,array){
+max.unique.links<-function(njudges,array){
   array<-sort(array,T)
-  un.links<-choose(judges,2)
+  un.links<-choose(njudges,2)
 
   ordered<-1
   nnext<-2
-  ifelse(length(array)<=1000,
-  ordered<-fun1(array,judges,ordered,nnext),
+  { if(length(array)<=1000) {
+    #ordered<-fun1(array,njudges,ordered,nnext)
+    ret<-fun1(array,njudges,ordered,nnext)
+    nnext<-ret$l2
+    ifelse(nnext>x*1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+  }
+    else
   {
-    sapply(seq(ceiling(length(array)/1000)),function(x) {
-      ordered<<-fun1(array[1:min(x*1000,length(array))],judges,ordered,nnext)
-      nnext<<-ordered[length(ordered)]
-    })
-  })
+    for(x in 1:ceiling(length(array)/1000))
+    {
+      ret<-fun1(array[1:min(x*1000,length(array))],njudges,ordered,nnext)
+      #nnext<-ordered[length(ordered)]
+      #ordered<-ordered[-length(ordered)]
+      nnext<-ret$l2
+      ifelse(nnext>x*1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+      if(sum(array[ordered])==njudges) break
+    }
+  }
+  }
   
   exist.links<-sum(choose(array[ordered],2),na.rm = T)
   pos.links<-sum(choose(array[-ordered],2)-choose(ceiling(array[-ordered]/2),2)-choose(floor(array[-ordered]/2),2))
@@ -223,15 +264,19 @@ max.unique.links<-function(judges,array){
   c
 }
 
-
-
-fun1<-function(array,judges,order,nnext){
-  ifelse(sum(array[c(order,nnext)])<judges,
-         return(fun1(array,judges,c(order,nnext),nnext+1)),
-         ifelse(sum(array[c(order,nnext)])>judges,
-                return(fun1(array,judges,order,nnext+2)),
-                c(order,nnext)
-           )
-         )
-  c(order,nnext)
+fun1<-function(array,njudges,order,nnext){
+  {if(length(array)<nnext)
+         list(l1=order,l2=nnext)
+   else {if(sum(array[c(order,nnext)])<njudges)
+         return(fun1(array,njudges,c(order,nnext),nnext+1))
+   else
+         { if(sum(array[c(order,nnext)])>njudges)
+                return(fun1(array,njudges,order,nnext+2))
+           else
+                list(l1=order,l2=nnext)
+         }
 }
+   }
+}
+#{ if(nnext>length(array)) list(l1=order,l2=nnext) else list(l1=c(order,nnext),l2=nnext)}
+#  list(l1=order,l2=nnext)

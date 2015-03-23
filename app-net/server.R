@@ -1,3 +1,4 @@
+#require(gridSVG)
 require(shiny)
 require(saos)
 require(googleVis)
@@ -8,6 +9,7 @@ require(RgoogleMaps)
 require(igraph)
 require(plyr)
 require(data.table)
+require(RColorBrewer)
 # server.R
 source("funkcje.R")
 judgments<-read.table("data/judgments.csv")
@@ -15,6 +17,8 @@ judges<-read.table("data/judges.csv")
 divisions<-read.table("data/divisions.csv")
 judges.net<-read.table("data/judges.net.csv")
 courts<-read.table("data/courts.csv")
+
+theme_set(theme_bw())
 
 #funkcje nieużywane na razie zakomentowane (dla wydziału/izby)
 
@@ -101,47 +105,71 @@ shinyServer(function(input, output) {
     div.un<-unique(unlist(V(g)$DivisionCode))
     matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))
     matrix
-    
-#     g<-subgraph.simplified.court()
-#     div.un<-unique(unlist(V(g)$DivisionCode))
-#     list<-sapply(div.un,function(x) which(V(g)$DivisionCode==x))
-#     names(list)<-rainbow(length(div.un))
-#     list$labels<-div.un
-#     list
   })
-  
+
   subgraph.mark.list<-reactive({
     g<-subgraph.simplified.court()
     div.un<-unique(unlist(V(g)$DivisionCode))
     matrix<-subgraph.mark.matrix()
     list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
-    names(list)<-rainbow(length(div.un))
+    names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+    names(list)<-addalpha(names(list),0.8)
     list$labels<-div.un
-    #----
-    ul<-unlist(list[-length(list)])
-    names(ul)<-substr(names(ul),1,9)
-    ul<-as.list(ul)
-    ul$labels<-div.un
-    ul
-    #list
+    #---- opcja 1
+#     ul<-unlist(list[-length(list)])
+#     names(ul)<-substr(names(ul),1,9)
+#     ul<-as.list(ul)
+#     ul$labels<-div.un
+#     ul
+    #--- opcja 2
+    cl<-clusters(g)
+    ord<-order(cl$csize,decreasing = T)
+    list2<-sapply(list[-length(list)],function(x) {
+      a<-cl$membership[x]  
+      ll<-lapply(unique(cl$membership[x]),function(y){
+      x[which(a==y)]
+      })
+    })
+    list2<-unlist(list2,recursive = F)
+    names(list2)<-substr(names(list2),1,9)
+    list2$labels<-div.un
+    list2
+#--- opcja std.
+#    list
   })
   
-subgraph.final<-reactive({
-  gb<-subgraph.simplified.court()
-  div.un<-subgraph.mark.list()$labels
-  matrix<-subgraph.mark.matrix()
-  sapply(seq(length(div.un)),function(x) {
-    vadd<-which(matrix[,x])
-    c1<-t(combn(vadd,2))
-    gb<<-add.edges(gb,c1)
-    E(gb)$type[which(is.na(E(gb)$type))]<<-"fake"
-    E(gb)$weight[which(is.na(E(gb)$weight))]<<-3
-  })
-  gb<-simplify(gb,remove.multiple = F,remove.loops = T)
+subgraph.color.pie<-reactive({
+  g<-subgraph.simplified.court()
+  div.un<-unique(unlist(V(g)$DivisionCode))
+  matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))  
+  names<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+  names<-addalpha(names,0.75)
+  values<-lapply(V(g)$DivisionCode,function(x) rep(1/length(x),length(x)))
+  colors<-lapply(seq(nrow(matrix)),function(x) names[matrix[x,]])
+  V(g)$colour<-colors
+  V(g)$pie.values<-values
+  g
 })
 
+subgraph.final<-reactive({
+#   gb<-subgraph.simplified.court()
+#   div.un<-subgraph.mark.list()$labels
+#   matrix<-subgraph.mark.matrix()
+#   sapply(seq(length(div.un)),function(x) {
+#     vadd<-which(matrix[,x])
+#     c1<-t(combn(vadd,2))
+#     gb<<-add.edges(gb,c1)
+#     E(gb)$type[which(is.na(E(gb)$type))]<<-"fake"
+#     E(gb)$weight[which(is.na(E(gb)$weight))]<<-3
+#   })
+#   gb<-simplify(gb,remove.multiple = F,remove.loops = T)
+  subgraph.color.pie()
+})
 
-
+subgraph.layout<-reactive({
+  g<-subgraph.final()
+  layout.fruchterman.reingold(g,weights=E(g)$weight,area=10000*vcount(g.sim)^2,repulserad=50000*vcount(g.sim)^3)
+})
   
 #   judges.coop.year<-reactive({
 #   years<-unique(subset.judges()$judgmentYear)
@@ -160,7 +188,7 @@ subgraph.final<-reactive({
   
   judges.coop.year<-reactive({
     years<-unique(subset.judges.court()$judgmentYear)
-    if(ecount(subgraph.simplified.court())==0)
+    {if(ecount(subgraph.simplified.court())==0)
       list1=NULL
     else{
     list1<-as.data.frame(t(sapply(years,function(x){
@@ -170,9 +198,12 @@ subgraph.final<-reactive({
       g.sub<-simplify(graph.data.frame(sub.judgments,directed = F,vertices=NULL),remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
       coop.array<-count(sub.judges,"judgmentID")$freq
       coop<-ecount(g.sub)/max.unique.links(n.judges,coop.array)
+      coop=ifelse(is.nan(coop),0,coop)
+      coop=ifelse(coop>1,1,coop)
       c(x,coop)
     })))
     names(list1)<-c("year","coop")
+    }
     }
     list1
   })
@@ -239,7 +270,7 @@ subgraph.final<-reactive({
       g.sub<-subgraph.edges(g,E(g)[E(g)$judgmentYear==x],delete.vertices = T)
       g.sub<-simplify(g.sub)
       cl<-clusters(g.sub)
-      c(x,max(cl$csize)/vcount(g.sub))
+      c(as.numeric(x),max(cl$csize)/vcount(g.sub))
     }))
     g.comp<-as.data.frame(g.comp)
     names(g.comp)<-c("year","size.max.component")
@@ -254,82 +285,126 @@ subgraph.final<-reactive({
     names(df)<-c("year","number.judges")
     df
   })
+subset.judges.clean<-reactive({
+  subset(subset.judges.court(),!is.na(JudgeSex))
+})
+
+sex.dist<-reactive({
+  sexc<-count(subset.judges.clean(),c("judgmentID","JudgeSex"))
+  ids<-data.frame(judgmentID=unique(sexc$judgmentID))
+  sexa<-sqldf("select i.judgmentID, f.freq as freqf, m.freq as freqm from ids i
+            left join sexc f on
+            f.judgmentID=i.judgmentID
+            and f.JudgeSex='F'
+            left join sexc m on
+            m.judgmentID=i.judgmentID
+            and m.JudgeSex='M'
+            ")
+  sexa[is.na(sexa)]<-0
+  sex.final<-transform(sexa,frac.female=freqf/(freqf+freqm))
+})
 
   output$table1<-renderDataTable({max.component()})
   output$text1<-renderText({judges.coop.court()})
   
 output$plot.net <- renderPlot({
-    lay<-layout.fruchterman.reingold(subgraph.simplified())
+    lay<-subgraph.layout()
     plog(subgraph.simplified(),lay)
   },width=400,height=400)
 
 plot.net2 <- reactive({
-  g<-subgraph.final()
-  lay<-layout.fruchterman.reingold(g,weights=E(g)$weight)
+  #g<-subgraph.final()
+  g<-subgraph.simplified.court()
+  lay<-subgraph.layout()
   list<-subgraph.mark.list()[-length(subgraph.mark.list())]
   plog(g,lay,list)
 })#,width=400,height=400)
+
+output$plot.pie<-renderPlot({
+    g<-subgraph.color.pie()
+    lay<-subgraph.layout()
+    plog.pie(g,lay)
+  },width=800,height=800)
 
 plot.legend <- reactive({
   plog.legend(subgraph.mark.list())  
 })#,width=400,height=400)
 
 output$plot.graph<-renderPlot({
-  par(mfrow=c(1,2))
+  par(mfrow=c(2,1))
   plot.net2()
   plot.legend()
-},width=800,height=800)
+},width=800,height=1600)
 
 plot.k <- reactive({
-    ggplot(k.dist(),aes(x=k))+geom_histogram()
+  if(ecount(subgraph.simplified.court())==0) 
+    NULL
+  else {
+    br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
+    #br<-seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20)
+    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - Number of direct connections to other judges",title="Histogram of k")
+  }
   })
   
 plot.w <- reactive({
-    ggplot(w.dist(),aes(x=w))+geom_histogram()
+  if(ecount(subgraph.simplified.court())==0) 
+    NULL
+  else {
+    br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
+    ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - Number of times two judges was in the same judgment team",title="Histogram of w")
+  }
   })
-  
+
 # plot.t <- reactive({
 #     ggplot(trans.dist(),aes(x=clust))+geom_histogram()
 #   })
-  
-plot.s<-reactive({
-    ggplot(s.dist(),aes(x=s)) + geom_histogram()
-  })
+# 
+# plot.s<-reactive({
+#     ggplot(s.dist(),aes(x=s)) + geom_histogram()
+#   })
 
 plot.comp <- reactive({
   if(is.null(max.component()))
-    ggplot(data.frame(x=0,y=5,t="No data to plot"),aes(x=x,y=y,label=t)) + geom_text(size=20)
+    #ggplot(data.frame(x=0,y=5,t="No data to plot"),aes(x=x,y=y,label=t)) + geom_text(size=20)
+    NULL
   else
-    ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()
+    ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()+labs(y="Maximum component size [%]",title="Graph of the maximum component relative size in terms of number of nodes")+ylim(0,1)
   })
   
 plot.judges <- reactive({
-    ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()
+    ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()+labs(y="Number of judges",title="Graph showing number of judges in court in following years")+ylim(0,max(judges.year()$number.judges))
   })
 
 plot.coop<- reactive({
   if(is.null(judges.coop.year()))
-    ggplot(data.frame(x=0,y=5,t="No data to plot"),aes(x=x,y=y,label=t)) + geom_text(size=20)
+    #ggplot(data.frame(x=0,y=5,t="No data to plot"),aes(x=x,y=y,label=t)) + geom_text(size=20)
+    NULL
   else
-    ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()
+    ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()+labs(y="Diversity of judging teams [%]",title="Graph showing diversity of judging teams in following years")+ylim(0,1)
   })
 
 plot.judgments <- reactive({
-    ggplot(judgments.year(),aes(x=year,y=number.judgments))+geom_line()
+    ggplot(judgments.year(),aes(x=year,y=number.judgments))+geom_line()+labs(y="Number of judgments",title="Graph showing number of judgments in specified court in following years")+ylim(0,max(judgments.year()$number.judgments))
   })
 
-output$plot.top.chart<-renderPlot({
-  ggplot(judges.top.court(),aes(x=N.of.judgments,y=JudgeName))+geom_point()
+plot.sex<-reactive({
+  sex.final<-sex.dist()
+  ctemp<-count(subset.judges.clean(),c("JudgeName","JudgeSex"))
+  sexcourt<-count(ctemp[-3],"JudgeSex")
+  frac<-sexcourt$freq[sexcourt$JudgeSex=="F"]/(sexcourt$freq[sexcourt$JudgeSex=="F"]+sexcourt$freq[sexcourt$JudgeSex=="M"])
+  #vl<-round(mean(sex.final$frac.female),2)
+  vl<-round(frac,2)
+  h<-hist(sex.final$frac.female,breaks=seq(0,1,0.1))
+  g<-ggplot(sex.final,aes(x=frac.female))+geom_histogram(breaks=seq(0,1,0.1))+labs(x="Fraction of female judges in judgment team",title="Histogram of female judges preferences")
+  g<-g+geom_segment(x =vl, y =0 , xend =vl, yend =Inf ,size=0.7,col="red")+geom_text(data=NULL,x=vl+0.15,y=max(h$counts),label=paste("Mean: ",vl,sep=""))
+  g
 })
-  output$plot.multi<-renderPlot({
-    #multiplot(plot.comp(),plot.judges(),plot.coop(),plot.k(),plot.w(),plot.s(),cols=2)
-    multiplot(plot.k(),plot.w(),plot.s(),plot.comp(),plot.judges(),plot.judgments(),plot.coop(),cols=2)
-  })
+output$plot.top.chart<-renderPlot({
+  top<-judges.top.court()
+  ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")+scale_size_continuous(range = c(3,15))+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-N.of.judgments/35)), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=10),axis.text.y  = element_text(angle=0, vjust=0.5, size=10),legend.position="none")
+},width=800,height=600)
 
-#   output$plot2<-renderGvis({
-#     #no.rand<-data.frame(year=seq(1990,2015,length.out=26),number=seq(30,100,length.out = 26))
-#     g<-gvisLineChart(division.coop(),xvar="year",yvar="wsp",chartid = "Chart1")
-#     return(g)
-#   })
-  
+  output$plot.multi<-renderPlot({
+    multiplot(plot.k(),plot.w(),plot.comp(),plot.judges(),plot.judgments(),plot.coop(),plot.sex(),cols=2)
+  },width=800,height=1500)
 })
