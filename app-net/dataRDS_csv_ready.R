@@ -5,10 +5,16 @@ require(date)
 require(stringi)
 require(XML)
 require(httr)
+require(saos)
 
 ## 0.wczytanie danych
+# COMMON
 input<-readRDS("app-net/data/common_courts_data.RDS")
 locations<-readRDS("../saos-apps/courts_coords.RDS")
+#Supreme, Constitutional Tribunal
+judg.supreme<-search_judgments(courtType = "SUPREME",limit=NULL,force=TRUE)
+judg.const<-search_judgments(courtType ="CONSTITUTIONAL_TRIBUNAL",limit=NULL,force=TRUE)
+
 judgments.list<-unlist(input,recursive = F)
 class(judgments.list)<-c("saos_search","list")
 j.judgmentType<-saos::extract(judgments.list,"judgmentType")
@@ -17,13 +23,39 @@ j.division<-saos::extract(judgments.list,"division")
 j.judges<-saos::extract(judgments.list,"judges")
 j.divisions<-subset(j.division,select=c("id","court.code","court.name","code","name"))
 names(j.divisions)<-c("judgmentID","CourtCode","CourtName","DivisionCode","DivisionName")
-jdivisions<-j.divisions
-divisions<-unique(j.divisions[,-1]) #tabela1: divisions
-jjudgmentType<-j.judgmentType
+
+c.judgmentType<-saos::extract(judg.const,"judgmentType")
+c.judgmentDate<-saos::extract(judg.const,"judgmentDate")
+c.judges<-saos::extract(judg.const,"judges")
+c.divisions<-data.frame(judgmentID=c.judgmentType$id)
+c.divisions$CourtCode="00000001"
+c.divisions$CourtName="Trybunał Konstytucyjny"
+c.divisions$DivisionCode="0000001"
+c.divisions$DivisionName="Trybunał Konstytucyjny"
+
+s.judgmentType<-saos::extract(judg.supreme,"judgmentType")
+s.judgmentDate<-saos::extract(judg.supreme,"judgmentDate")
+s.judges<-saos::extract(judg.supreme,"judges")
+s.division<-saos::extract(judg.supreme,"division")
+s.division$CourtCode="00000002"
+s.division$CourtName="Sąd Najwyższy"
+s.divisions<-subset(s.division,select=c("id","CourtCode","CourtName","division.id","name"))
+names(s.divisions)<-c("judgmentID","CourtCode","CourtName","DivisionCode","DivisionName")
+
+jdivisions<-rbind(j.divisions,c.divisions,s.divisions)
+
+divisions<-unique(jdivisions[,-1]) #tabela1: divisions
+
+
+jjudgmentType<-rbind(j.judgmentType,c.judgmentType,s.judgmentType)
 j.judgmentDate<-transform(j.judgmentDate,judgmentYear=as.POSIXlt(j.judgmentDate$judgmentDate)$year+1900)
-jjudgmentDate<-j.judgmentDate
+c.judgmentDate<-transform(c.judgmentDate,judgmentYear=as.POSIXlt(c.judgmentDate$judgmentDate)$year+1900)
+s.judgmentDate<-transform(s.judgmentDate,judgmentYear=as.POSIXlt(s.judgmentDate$judgmentDate)$year+1900)
+jjudgmentDate<-rbind(j.judgmentDate,c.judgmentDate,s.judgmentDate)
 j.judges<-j.judges[,-3]
-jjudges<-j.judges
+c.judges<-c.judges[,-3]
+s.judges<-s.judges[,-3]
+jjudges<-rbind(j.judges,c.judges,s.judges)
 
 judges<-sqldf("select d.judgmentID, j.name as JudgeName, j.specialRoles, d.CourtCode,d.DivisionCode,dat.judgmentDate,dat.judgmentYear from jjudges j
               left join jdivisions d on
@@ -113,7 +145,6 @@ left<-which(is.na(temp$sex))
 judges$JudgeSex<-NA
 lapply(seq(nrow(temp)),function(x) judges$JudgeSex[llist1[[x]]]<<-temp$sex[x])
 
-
 ## stworzenie sieci współzasiadania i 
 
 judges.net<-sqldf("select j1.JudgeName as name1, j2.JudgeName as name2,j1.JudgeSex as Sex1,j2.JudgeSex as Sex2, j1.judgmentID, j1.judgmentDate,j1.judgmentYear, j1.specialRoles as specialRole1, j2.specialRoles as specialRole2,
@@ -126,3 +157,10 @@ write.table(judges,"app-net/data/judges.csv")
 write.table(divisions,"app-net/data/divisions.csv")
 write.table(judges.net,"app-net/data/judges.net.csv")
 write.table(courts,"app-net/data/courts.csv")
+
+saveRDS(judgments,"app-net/data/judgments.rds")
+saveRDS(judges,"app-net/data/judges.rds")
+saveRDS(divisions,"app-net/data/divisions.rds")
+saveRDS(judges.net,"app-net/data/judges.net.rds")
+saveRDS(courts,"app-net/data/courts.rds")
+

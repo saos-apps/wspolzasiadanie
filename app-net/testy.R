@@ -165,13 +165,14 @@ g
 
 #infinite recursion problem
 
-courts[which(regexpr("Najw",courts$CourtName)>0),]
-judges.sub<-subset(judges,CourtCode==2)
-judgments.sub<-subset(judges.net,CourtCode==2)
+courts[which(regexpr("Wroc",courts$CourtName)>0),]
+judges.sub<-subset(judges,CourtCode==15500000 )
+judgments.sub<-subset(judges.net,CourtCode==15500000 )
 
 dt<-data.table(judges.sub)
 vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
 vert$DivisionCode<-sapply(vert$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
+#judgments.sub2<-judgments.sub[,c("name1"   ,     "name2" ,    "judgmentID"  , "judgmentDate" ,"judgmentYear"  ,"CourtCode" ,   "DivisionCode")]
 g<-graph.data.frame(judgments.sub,directed = F,vertices=vert)
 V(g)$vertex.shape<-NA
 V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
@@ -218,36 +219,33 @@ plog(g.sim,lay)
   list1
 
 
+
 max.unique.links<-function(njudges,array){
-  array2<-coop.array
-  njudges<-n.judges
-  array2<-sort(array2,T)
+  array<-sort(array,T)
   un.links<-choose(njudges,2)
-  
   ordered<-1
   nnext<-2
-{ if(length(array2)<=1000) {
+{ if(length(array)<=1000) {
   #ordered<-fun1(array,njudges,ordered,nnext)
-  ret<-fun1(array2,njudges,ordered,nnext)
+  ret<-fun1(array,njudges,ordered,nnext)
   nnext<-ret$l2
-  ifelse(nnext>x*1000 | nnext>length(array2),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+  ifelse(nnext>x*1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
 }
 else
 {
-  for(x in 1:ceiling(length(array2)/1000))
+  for(x in 1:ceiling(length(array)/1000))
   {
-    #x<-3
-    ret<-fun1(array2[1:min(x*1000,length(array2))],njudges,ordered,nnext)
+    ret<-fun1(array[1:min(x*1000,length(array))],njudges,ordered,nnext)
     #nnext<-ordered[length(ordered)]
     #ordered<-ordered[-length(ordered)]
     nnext<-ret$l2
-    ifelse(nnext>x*1000 |nnext>length(array2),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
-    if(sum(array2[ordered])==njudges) break
+    ifelse(nnext>x*1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+    if(sum(array[ordered])==njudges) break
   }
 }
 }
 
-exist.links<-sum(choose(array2[ordered],2),na.rm = T)
+exist.links<-sum(choose(array[ordered],2),na.rm = T)
 pos.links<-sum(choose(array[-ordered],2)-choose(ceiling(array[-ordered]/2),2)-choose(floor(array[-ordered]/2),2))
 
 ifelse((exist.links+pos.links)<un.links,
@@ -271,5 +269,3 @@ fun1<-function(array,njudges,order,nnext){
  }
 }
 }
-#{ if(nnext>length(array)) list(l1=order,l2=nnext) else list(l1=c(order,nnext),l2=nnext)}
-#  list(l1=order,l2=nnext)
