@@ -2,16 +2,6 @@ library(igraph)
 library(sqldf)
 library(ggplot2)
 
-# Multiple plot function
-#
-# ggplot objects can be passed in ..., or to plotlist (as a list of ggplot objects)
-# - cols:   Number of columns in layout
-# - layout: A matrix specifying the layout. If present, 'cols' is ignored.
-#
-# If the layout is something like matrix(c(1,2,3,3), nrow=2, byrow=TRUE),
-# then plot 1 will go in the upper left, 2 will go in the upper right, and
-# 3 will go all the way across the bottom.
-#
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   require(grid)
   
@@ -48,66 +38,11 @@ multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   }
 }
 
-# addalpha()
 addalpha <- function(colors, alpha=1.0) {
   r <- col2rgb(colors, alpha=T)
-  # Apply alpha
   r[4,] <- alpha*255
   r <- r/255.0
   return(rgb(r[1,], r[2,], r[3,], r[4,]))
-}
-# colorRampPaletteAlpha()
-colorRampPaletteAlpha <- function(colors, n=32, interpolate='linear') {
-  # Create the color ramp normally
-  cr <- colorRampPalette(colors, interpolate=interpolate)(n)
-  # Find the alpha channel
-  a <- col2rgb(colors, alpha=T)[4,]
-  # Interpolate
-  if (interpolate=='linear') {
-    l <- approx(a, n=n)
-  } else {
-    l <- spline(a, n=n)
-  }
-  l$y[l$y > 255] <- 255 # Clamp if spline is > 255
-  cr <- addalpha(cr, l$y/255.0)
-  return(cr)
-}
-
-#1.funkcja color.graph koloruje wierzchołki i krawędzie grafu.
-#	bierzemy wierzchołki grupami, zaczynając od najbardziej licznej. Pierwsze 8 kolorów z palety Set2 jest używane do pokolorowania największych grup. Następnie używamy wybranych z Paired i Greys. Kolory razem z kształtami moga stworzyc max. 8+5x4=28 kombinacji, które nie będą się dublowały dla różnych grup. W tej sieci jest 25 grup.
-color.graph<-function(g){
-V(g)$color<-NA;
-units<-unique(V(g)$label)
-temp<-sapply(1:length(units),function(x) {length(V(g)[V(g)$label==units[x]])})
-colors<-c(brewer.pal(8,"Set2"),rep(c(brewer.pal(12,"Paired")[c(2,6,10,12)],brewer.pal(9,"Greys")[8]),each=ceiling((length(units)-8)/5))) # jeśli byśmy kolory z Set2 powtarzali dla wszystkich kształtów to możemy stworzyć max. 13x4 kombinacji.
-ord<-order(temp,decreasing=T) 
-units.ord<-units[ord] #tablica z lvl2 jednostek zaczynając od najbardziej licznych. użyta ponizej do kolorowania wierzchołków
-sapply(1:length(units.ord),function(x) V(g)$color[V(g)$label==units.ord[x]]<<-colors[x])
-V(g)$color[V(g1b)$label==3999]<-"black" # Inne jednostki kolorujemy chwilowo na czarno aby taki sam był kolor krawędzi
-ord<-order(temp,decreasing=F) #tutaj odwracamy kolejność kolorowania dla krawędzi tak aby możliwie jak najwięcej było krawędzi w kolorze wierzchołków z których wychodzą jednocześnie dając priorytet tym najbardziej licznym jednostkom.
-units.ord<-units[ord]
-sapply(1:length(units.ord),function(x) {col<-V(g)$color[V(g)$label==units.ord[x]][1];e<-E(g)[from(V(g)[V(g)$label==units.ord[x]])];E(g)$color[e]<<-rep(col,length(e));})
-V(g)$color[V(g1b)$label==3999]<-"white" #wypełnienie V innych jednostek białe
-g
-}
-
-#2.funkcja shape.graph która przyporządkowuje 4 kształty (zdefiniowane poniżej) dla kolejnych jednostek. 
-shape.graph<-function(g){
-V(g)$shape<-NA;
-units<-unique(V(g)$label)
-temp<-sapply(1:length(units),function(x) {length(V(g)[V(g)$label==units[x]])})
-shapes<-rep(c("fsquare","fcircle","ftriangle","fstar"),ceiling(length(units)/4))
-ord<-order(temp,decreasing=T)
-units.ord<-units[ord]
-sapply(1:length(units.ord),function(x) V(g)$shape[V(g)$label==units.ord[x]]<<-shapes[x])
-g
-}
-
-#3.funkcja rysująca legendę. w plot rysujemy tylko wierzchołki. 
-plogleg.old<-function(g,layout1=layout.auto){
-plot.igraph(g,vertex.size=5,vertex.label=NA,vertex.label.cex=3,vertex.label.degree=0,vertex.shape=V(g)$shape,vertex.frame.width=1,
-vertex.frame.color=V(g)$fcolor,edge.color=NA,edge.width=0.7,edge.curved=FALSE,layout=layout1,asp=.35)#,rescale=F,ylim=c(6,8))
-text(x=-.9,y=seq(1,-1,length.out=9),labels=V(g)$label,pos=4,adj=c(.5,.5),cex=2.5); #ylim=c(-.5,.5)
 }
 
 plog.legend<-function(list){
@@ -117,10 +52,6 @@ plog.legend<-function(list){
   V(g.leg)$color=names(list[-length(list)])
   lay.leg<-matrix(c(seq(1,vc),rep(0,vc)),byrow = F,nrow = vc)
   plot.igraph(g.leg,vertex.label.dist=1,layout=lay.leg)
-}
-#4.funkcja rysująca sieć współpracy. Ustawiona stała wlk. wierzchołków, grubość krawędzi zależy od wagi.
-plog.old<-function(g,layout1=layout.auto){
-plot.igraph(g,vertex.size=2,vertex.label=NA,vertex.frame.color="black",edge.color=E(g)$color,edge.width=3*log(E(g)$weight,10),edge.curved=TRUE,layout=layout1)
 }
 
 plog<-function(g,layout1=layout.auto,list=NULL){
@@ -228,6 +159,7 @@ add.vertex.shape("fstar", clip=igraph.shape.noclip,
                  plot=mystar, parameters=list(vertex.norays=5,vertex.frame.color=1,
                                               vertex.frame.width=1))
 
+# funkcja licząca różnorodność składów poprzez liczenie ile maksymalnie mogłoby być w danej konfig (l.sędziów, l.osób w składach sędziowskich) unikalnych krawędzi
 max.unique.links<-function(njudges,array){
   array<-sort(array,T)
   un.links<-choose(njudges,2)
@@ -238,15 +170,13 @@ max.unique.links<-function(njudges,array){
     #ordered<-fun1(array,njudges,ordered,nnext)
     ret<-fun1(array,njudges,ordered,nnext)
     nnext<-ret$l2
-    ifelse(nnext>x*1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
+    ifelse(nnext>1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
   }
     else
   {
     for(x in 1:ceiling(length(array)/1000))
     {
       ret<-fun1(array[1:min(x*1000,length(array))],njudges,ordered,nnext)
-      #nnext<-ordered[length(ordered)]
-      #ordered<-ordered[-length(ordered)]
       nnext<-ret$l2
       ifelse(nnext>x*1000 | nnext>length(array),ordered<-ret$l1,ordered<-c(ret$l1,ret$l2))
       if(sum(array[ordered])==njudges) break
@@ -278,5 +208,3 @@ fun1<-function(array,njudges,order,nnext){
 }
    }
 }
-#{ if(nnext>length(array)) list(l1=order,l2=nnext) else list(l1=c(order,nnext),l2=nnext)}
-#  list(l1=order,l2=nnext)

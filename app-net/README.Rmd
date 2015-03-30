@@ -25,23 +25,22 @@ The input data for this application is data of polish judges and judgments. This
 * divisions
 * judges.net
 
+```{r,echo=FALSE}
+require(plyr)
+judgm<-data.frame(judgments=names(read.table("data/judgments.csv",header = T,nrows = 1)))
+judges<-data.frame(judges=names(read.table("data/judges.csv",header = T,nrows = 1)))
+div<-data.frame(divisions=names(read.table("data/divisions.csv",header = T,nrows = 1)))
+j.net<-data.frame(judges.net=names(read.table("data/judges.net.csv",header = T,nrows = 1)))
+l1<-list(judgm,judges,div,j.net)
+temp<-as.data.frame(t(rbind.fill(lapply(l1,function(y){as.data.frame(t(y),stringsAsFactors=FALSE)}))))
+names(temp)<-c("judgments","judges","divisions","judges.net")
+```
 
 
-
-
-|    |judgments    |judges       |divisions    |judges.net   |
-|:---|:------------|:------------|:------------|:------------|
-|V1  |judgmentID   |judgmentID   |CourtCode    |name1        |
-|V2  |judgmentType |JudgeName    |CourtName    |name2        |
-|V3  |judgmentDate |specialRoles |DivisionCode |Sex1         |
-|V4  |judgmentYear |CourtCode    |DivisionName |Sex2         |
-|V5  |CourtCode    |DivisionCode |NA           |judgmentID   |
-|V6  |DivisionCode |judgmentDate |NA           |judgmentDate |
-|V7  |NA           |judgmentYear |NA           |judgmentYear |
-|V8  |NA           |JudgeSex     |NA           |specialRole1 |
-|V9  |NA           |NA           |NA           |specialRole2 |
-|V10 |NA           |NA           |NA           |CourtCode    |
-|V11 |NA           |NA           |NA           |DivisionCode |
+```{r kable,echo=FALSE}
+library(knitr)
+kable(temp)
+```
 
 Description of each variable in above table is following:
 

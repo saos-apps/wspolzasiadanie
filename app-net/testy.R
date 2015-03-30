@@ -269,3 +269,14 @@ fun1<-function(array,njudges,order,nnext){
  }
 }
 }
+
+#error x not found
+
+c.code1<-max(courts$CourtCode[which(regexpr("Wrocł",courts$CourtName)>0)])
+judges.sub<-subset(judges,CourtCode==c.code1)
+judgments.sub<-subset(judges.net,CourtCode==c.code1)
+g.sub<- g.court(judges.sub,judgments.sub)
+g.sim<-g.simplify.c(g.sub)
+judges.coop1<-j.coop.year(judges.sub,judgments.sub,g.sim)
+m.matrix<-g.mark.matrix(g.sim)
+m.list<-g.mark.list(g.sim,m.matrix)

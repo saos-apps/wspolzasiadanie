@@ -152,11 +152,11 @@ judges.net<-sqldf("select j1.JudgeName as name1, j2.JudgeName as name2,j1.JudgeS
                   inner join judges j2 on j1.judgmentID=j2.judgmentID and j1.JudgeName<>j2.JudgeName")
 
 ## zapis do pliku jako dane wejściowe do aplikacji
-write.table(judgments,"app-net/data/judgments.csv")
-write.table(judges,"app-net/data/judges.csv")
-write.table(divisions,"app-net/data/divisions.csv")
-write.table(judges.net,"app-net/data/judges.net.csv")
-write.table(courts,"app-net/data/courts.csv")
+write.table(judgments[1:10,],"app-net/data/judgments.csv")
+write.table(judges[1:10,],"app-net/data/judges.csv")
+write.table(divisions[1:10,],"app-net/data/divisions.csv")
+write.table(judges.net[1:10,],"app-net/data/judges.net.csv")
+write.table(courts[1:10,],"app-net/data/courts.csv")
 
 saveRDS(judgments,"app-net/data/judgments.rds")
 saveRDS(judges,"app-net/data/judges.rds")
