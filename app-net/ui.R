@@ -1,14 +1,14 @@
 fluidPage(
-  titlePanel("Wspólpraca sędziów w Polsce"),
+  titlePanel("Judging teams in Poland"),
   sidebarLayout(
     sidebarPanel(
-      helpText("Opis aplikacji...
-               Wskaźnik 'współpracy' = l.krawędzi / l. możliwych krawędzi (w danym sądzie i wydziale"),
       uiOutput("select.court")
     ),
     mainPanel( 
       tabsetPanel(
-        tabPanel("Tests", textOutput("times"),textOutput("text1"),dataTableOutput("table1"),dataTableOutput("table2")),
+        tabPanel("Tests", textOutput("times"),textOutput("text1"),dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
+        tabPanel("Description", helpText("Description...
+               The application has been made to present the structure of judging teams in Polish courts.")),
         tabPanel("Net mark", plotOutput("plot.graph")),
         tabPanel("Net pie", plotOutput("plot.pie")),
          tabPanel("Stats",plotOutput("plot.multi")),

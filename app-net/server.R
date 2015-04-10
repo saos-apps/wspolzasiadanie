@@ -4,6 +4,7 @@ require(igraph)
 require(plyr)
 require(data.table)
 require(RColorBrewer)
+require(shinydashboard)
 # server.R
 source("funkcje.R")
 source("helpers.R")
@@ -20,7 +21,11 @@ shinyServer(function(input, output) {
     courts.un<-divisions[!duplicated(divisions$CourtCode),]
     list1<-as.list(courts.un$CourtCode)
     names(list1)<-courts.un$CourtName
-    selectInput("select.court",label=h3("Wybierz sąd:"),choices=list1)
+    selectInput("select.court",label=h3("Select the court:"),choices=list1)
+  })
+  
+  court.divisions<-reactive({
+    subset(divisions,CourtCode==input$select.court,select="DivisionName")
   })
   
   subset.judgments.court<-reactive({
@@ -72,7 +77,7 @@ subgraph.layout<-reactive({
 })
   
   s.dist<-reactive({
-    s<-count(subset.judges.court(),"judgmentID")$freq
+    s<-plyr::count(subset.judges.court(),"judgmentID")$freq
     as.data.frame(s)
   })
   
@@ -161,12 +166,13 @@ plot.sex<-reactive({
 output$text1<-renderText({subgraph.summary()})
 output$table1<-renderDataTable({max.component()})
 output$table2<-renderDataTable({judges.coop.year()})
+output$table3<-renderDataTable({court.divisions()})
 
 output$plot.graph<-renderPlot({
-  par(mfrow=c(2,1))
+  #par(mfrow=c(2,1))
   plot.net()
-  plot.legend()
-},width=800,height=1600)
+  #plot.legend()
+},width=800,height=800)
 
 output$plot.pie<-renderPlot({
   g<-subgraph.color.pie()

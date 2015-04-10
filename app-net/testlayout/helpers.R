@@ -68,6 +68,9 @@ g.color.div<-function(g.simple.c,g.mark.matrix,divisions.sub){
   names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
   names(list)<-addalpha(names(list),0.8)
   list$labels<-as.vector(sapply(div.un,function(x) unique(divisions.sub$DivisionName2[which(divisions.sub$DivisionCode2==x)])))
+  #list$labels<-div.un
+  #sapply(list$labels,function(x) divs$DivisionName2[which(divs$DivisionCode2==x)])
+  #data.frame(division=div.un,colour=colours)
   list
 }
 

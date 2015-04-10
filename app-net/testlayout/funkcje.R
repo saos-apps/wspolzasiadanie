@@ -76,7 +76,7 @@ plog.legend2<-function(list){
   plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=3)
   label<-ifelse(nchar(list$labels)>55,paste(substr(list$labels,1,55),"...",sep=""),list$labels)
   text(x=-.9,y=seq(1,-1,length.out=length(list$labels)),labels=label,pos=4,adj=c(1,1),cex=1.25,ylim=c(-1,1.5),xlim=c(-1.3,1)); #ylim=c(-.5,.5)
-  text(x=-1.1,y=1.3,labels="Divisions:",cex=1.75,pos=4,adj=c(1,1))
+  text(x=-1.1,y=1.3,labels="Divisions:",cex=1.75,pos=4,adj=c(1,1)) #,,
 }
 
 plog<-function(g,layout1=layout.auto,list=NULL){

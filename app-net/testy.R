@@ -272,11 +272,46 @@ fun1<-function(array,njudges,order,nnext){
 
 #error x not found
 
-c.code1<-max(courts$CourtCode[which(regexpr("Wrocł",courts$CourtName)>0)])
+c.code1<-max(courts$CourtCode[which(regexpr("Wroc",courts$CourtName)>0)])
+courts[which(regexpr("Wroc",courts$CourtName)>0),]
+c.code1<-15502500
 judges.sub<-subset(judges,CourtCode==c.code1)
 judgments.sub<-subset(judges.net,CourtCode==c.code1)
+divs<-subset(divisions,CourtCode==c.code1)
 g.sub<- g.court(judges.sub,judgments.sub)
 g.sim<-g.simplify.c(g.sub)
+g.sim<-g.color.pie(g.sim)
 judges.coop1<-j.coop.year(judges.sub,judgments.sub,g.sim)
 m.matrix<-g.mark.matrix(g.sim)
 m.list<-g.mark.list(g.sim,m.matrix)
+divs[which.max(nchar(as.character(divs[,4]))),]
+list<-g.color.div(g.sim,m.matrix,divs)
+
+plog.legend2(list)
+
+ifelse(nchar(list$labels)>55,paste(substr(list$labels,1,55),"...",sep=""),list$labels)
+
+temp<-as.vector(sapply(list$labels,function(x) {y=strsplit(x," ");z=as.character(y[[1]][1])}))
+
+ifelse(V(g.sim)$pie.values,TRUE,FALSE)
+
+
+  g<-g.sim
+  div.un<-unique(unlist(V(g)$DivisionCode2))
+  matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode2,function(y) x %in% y))  
+  names<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+  names<-addalpha(names,0.75)
+  values<-lapply(V(g)$DivisionCode2,function(x) rep(1/length(x),length(x)))
+  colors<-lapply(seq(nrow(matrix)),function(x) names[matrix[x,]])
+  shapes<-sapply(seq(vcount(g)),function(x) ifelse(length(values[[x]])>1,"pie",V(g)$vertex.shape[x]))
+  V(g)$colour<-colors
+  V(g)$pie.values<-values
+  V(g)$vertex.shape<-shapes
+  V(g)$vertex.shape<-"pie"
+  g
+}
+
+
+layg<-layout.fruchterman.reingold(g,weights=E(g)$weight,area=10000*vcount(g)^2,repulserad=50000*vcount(g)^3)
+
+plog.pie(g,layg)
