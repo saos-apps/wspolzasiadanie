@@ -1,11 +1,11 @@
 "CourtCode" "CourtName" "lon" "lat"
-"1" 15500000 "Sąd Apelacyjny we Wrocławiu" 17.0385376 51.1078852
-"NA" NA NA NA NA
-"NA.1" NA NA NA NA
-"NA.2" NA NA NA NA
-"NA.3" NA NA NA NA
-"NA.4" NA NA NA NA
-"NA.5" NA NA NA NA
-"NA.6" NA NA NA NA
-"NA.7" NA NA NA NA
-"NA.8" NA NA NA NA
+"1" "15500000" "Sąd Apelacyjny we Wrocławiu" 17.0385376 51.1078852
+"2" "15500500" "Sąd Okręgowy w Jeleniej Górze" 15.7348868 50.8979495
+"3" "15500505" "Sąd Rejonowy w Bolesławcu" 15.5643631 51.2652645
+"4" "15500510" "Sąd Rejonowy w Jeleniej Górze" 15.7360641 50.9019594
+"5" "15500520" "Sąd Rejonowy w Lubaniu" 15.2868507 51.1190662
+"6" "15500530" "Sąd Rejonowy w Zgorzelcu" 15.0142727 51.1518042
+"7" "15501000" "Sąd Okręgowy w Legnicy" 16.1577176 51.2056113
+"8" "15501005" "Sąd Rejonowy w Głogowie" 16.0902149 51.6622283
+"9" "15501015" "Sąd Rejonowy w Legnicy" 16.1576767 51.2059012
+"10" "15501020" "Sąd Rejonowy w Lubinie" 22.5526986 51.2473328

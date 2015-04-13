@@ -1,11 +1,11 @@
-"name1" "name2" "Sex1" "Sex2" "judgmentID" "judgmentDate" "judgmentYear" "specialRole1" "specialRole2" "CourtCode" "DivisionCode"
-"1" "Andrzej Krawiec" "Jerzy Skorupka" "M" "M" 1351 "2012-02-01" 2012 "PRESIDING_JUDGE" NA 15500000 1006
-"2" "Andrzej Krawiec" "Witold Franckiewicz" "M" "M" 1351 "2012-02-01" 2012 "PRESIDING_JUDGE" NA 15500000 1006
-"3" "Jerzy Skorupka" "Andrzej Krawiec" "M" "M" 1351 "2012-02-01" 2012 NA "PRESIDING_JUDGE" 15500000 1006
-"4" "Jerzy Skorupka" "Witold Franckiewicz" "M" "M" 1351 "2012-02-01" 2012 NA NA 15500000 1006
-"5" "Witold Franckiewicz" "Andrzej Krawiec" "M" "M" 1351 "2012-02-01" 2012 NA "PRESIDING_JUDGE" 15500000 1006
-"6" "Witold Franckiewicz" "Jerzy Skorupka" "M" "M" 1351 "2012-02-01" 2012 NA NA 15500000 1006
-"7" "Andrzej Kot" "Cezariusz Baćkowski" "M" "M" 1352 "2012-04-11" 2012 "PRESIDING_JUDGE" NA 15500000 1006
-"8" "Andrzej Kot" "Jerzy Skorupka" "M" "M" 1352 "2012-04-11" 2012 "PRESIDING_JUDGE" NA 15500000 1006
-"9" "Cezariusz Baćkowski" "Andrzej Kot" "M" "M" 1352 "2012-04-11" 2012 NA "PRESIDING_JUDGE" 15500000 1006
-"10" "Cezariusz Baćkowski" "Jerzy Skorupka" "M" "M" 1352 "2012-04-11" 2012 NA NA 15500000 1006
+"name1" "name2" "Sex1" "Sex2" "judgmentID" "judgmentDate" "judgmentYear" "specialRole1" "specialRole2" "CourtCode" "DivisionCode" "DivisionCode2"
+"1" "Andrzej Krawiec" "Jerzy Skorupka" "M" "M" 1351 "2012-02-01" 2012 "PRESIDING_JUDGE" NA "15500000" "0001006" 1
+"2" "Andrzej Krawiec" "Witold Franckiewicz" "M" "M" 1351 "2012-02-01" 2012 "PRESIDING_JUDGE" NA "15500000" "0001006" 1
+"3" "Jerzy Skorupka" "Andrzej Krawiec" "M" "M" 1351 "2012-02-01" 2012 NA "PRESIDING_JUDGE" "15500000" "0001006" 1
+"4" "Jerzy Skorupka" "Witold Franckiewicz" "M" "M" 1351 "2012-02-01" 2012 NA NA "15500000" "0001006" 1
+"5" "Witold Franckiewicz" "Andrzej Krawiec" "M" "M" 1351 "2012-02-01" 2012 NA "PRESIDING_JUDGE" "15500000" "0001006" 1
+"6" "Witold Franckiewicz" "Jerzy Skorupka" "M" "M" 1351 "2012-02-01" 2012 NA NA "15500000" "0001006" 1
+"7" "Andrzej Kot" "Cezariusz Baćkowski" "M" "M" 1352 "2012-04-11" 2012 "PRESIDING_JUDGE" NA "15500000" "0001006" 1
+"8" "Andrzej Kot" "Jerzy Skorupka" "M" "M" 1352 "2012-04-11" 2012 "PRESIDING_JUDGE" NA "15500000" "0001006" 1
+"9" "Cezariusz Baćkowski" "Andrzej Kot" "M" "M" 1352 "2012-04-11" 2012 NA "PRESIDING_JUDGE" "15500000" "0001006" 1
+"10" "Cezariusz Baćkowski" "Jerzy Skorupka" "M" "M" 1352 "2012-04-11" 2012 NA NA "15500000" "0001006" 1
