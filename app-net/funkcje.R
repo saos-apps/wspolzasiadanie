@@ -45,6 +45,23 @@ addalpha <- function(colors, alpha=1.0) {
   return(rgb(r[1,], r[2,], r[3,], r[4,]))
 }
 
+wrap.it <- function(x, len)
+{ 
+  sapply(x, function(y) paste(strwrap(y, len), 
+                              collapse = "\n"), 
+         USE.NAMES = FALSE)
+}
+
+wrap.labels <- function(x, len)
+{
+  if (is.list(x))
+  {
+    lapply(x, wrap.it, len)
+  } else {
+    wrap.it(x, len)
+  }
+}
+
 plog.legend<-function(list){
   vc<-length(list)-1
   g.leg<-graph.empty(vc,F)
@@ -73,10 +90,20 @@ plog.legend2<-function(list){
   V(g.leg)$label=list$labels
   V(g.leg)$color=names(list[-length(list)])
   lay.leg<-matrix(c(rep(0,vc),seq(1,vc)),byrow = F,nrow = vc)
-  plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=3)
+  plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=10)
   label<-ifelse(nchar(list$labels)>55,paste(substr(list$labels,1,55),"...",sep=""),list$labels)
-  text(x=-.9,y=seq(1,-1,length.out=length(list$labels)),labels=label,pos=4,adj=c(1,1),cex=1.25,ylim=c(-1,1.5),xlim=c(-1.3,1)); #ylim=c(-.5,.5)
-  text(x=-1.1,y=1.3,labels="Divisions:",cex=1.75,pos=4,adj=c(1,1))
+  text(x=-.9,y=seq(1,-1,length.out=length(list$labels)),labels=label,pos=4,adj=c(1,1),cex=2,ylim=c(-1,1.5),xlim=c(-1.3,1)); #ylim=c(-.5,.5)
+  text(x=-1.1,y=1.3,labels="Divisions:",cex=2,pos=4,adj=c(1,1))
+}
+
+plog.sex<-function(){
+  g.leg<-graph.empty(3,F)
+  V(g.leg)$label=c("Male","Female","Unidentified")
+  V(g.leg)$frame.color=c(brewer.pal(3,"Set1")[2],brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])
+  lay.leg<-matrix(c(rep(0,3),seq(1,3)),byrow = F,nrow = 3)
+  plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=20,vertex.shape="fcircle",vertex.frame.width=3,vertex.color=NA)
+  text(x=-.9,y=seq(1,-1,length.out=3),labels=V(g.leg)$label,pos=4,adj=c(1,1),cex=2,ylim=c(-1,1.5),xlim=c(-1.3,1))
+  text(x=-1.1,y=1.4,labels="Sex:",cex=2,pos=4,adj=c(1,1))
 }
 
 plog<-function(g,layout1=layout.auto,list=NULL){
@@ -86,9 +113,61 @@ plog<-function(g,layout1=layout.auto,list=NULL){
 
 plog.pie<-function(g,layout1=layout.auto){
   plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=V(g)$vertex.shape,vertex.pie=V(g)$pie.values,vertex.pie.color=V(g)$colour,edge.color="grey45",edge.width=1,
-              edge.curved=TRUE,layout=layout1,vertex.pie.lty=1,vertex.color=V(g)$colour,
-              vertex.frame.color=ifelse(V(g)$JudgeSex=="M","black",ifelse(V(g)$JudgeSex=="F","red","green"))
+              edge.curved=0.15,layout=layout1,vertex.pie.lty=1,vertex.color=V(g)$colour,
+              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
               )
+  par(new=TRUE)
+  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=ifelse(V(g)$vertex.shape=="pie","fcircle",V(g)$vertex.shape),edge.color=NA,edge.width=0,
+              layout=layout1,vertex.color=NA,
+              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
+  )
+}
+
+plog.pie.svg<-function(g,layout1=layout.auto){
+  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=V(g)$vertex.shape,vertex.pie=V(g)$pie.values,vertex.pie.color=V(g)$colour,edge.color="grey45",edge.width=1,
+              edge.curved=0.15,layout=layout1,vertex.pie.lty=1,vertex.color=V(g)$colour,
+              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
+  )
+  par(new=TRUE)
+  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=ifelse(V(g)$vertex.shape=="pie","fcircle",V(g)$vertex.shape),edge.color=NA,edge.width=0,
+              layout=layout1,vertex.color=NA,
+              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=1.2
+  )
+}
+
+plog.legend.svg<-function(list){
+  vc<-length(list)-1
+#   g.leg<-graph.empty(vc,F)
+#   V(g.leg)$label=list$labels
+#   V(g.leg)$color=names(list[-length(list)])
+#   lay.leg<-matrix(c(rep(0,vc),seq(1,vc)),byrow = F,nrow = vc)
+#   plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=10)
+  colors<-names(list[-length(list)])
+  labels<-wrap.labels(ifelse(nchar(list$labels)>55,paste(substr(list$labels,1,55),"...",sep=""),list$labels),22)
+#   text(x=-.9,y=seq(1,-1,length.out=length(list$labels)),labels=label,pos=4,adj=c(1,1),cex=2,ylim=c(-1,1.5),xlim=c(-1.3,1)); #ylim=c(-.5,.5)
+#   text(x=-1.1,y=1.3,labels="Divisions:",cex=2,pos=4,adj=c(1,1))
+  
+  plot(0,xlim=c(-5,5),ylim=c(-10,10),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
+  text(-5,10,"Divisions:",col="black",lwd = 3,cex=2,pos=4)  
+  yc<-seq(8,-10,length.out=vc)
+  for(i in 1:vc){
+    points(-4.5,yc[i],pch=21,bg=colors[i],col="black",cex=2,lwd=1)
+    text(-4.2,yc[i],labels[i],col="black",lwd = 0.75,cex=1.2,pos=4)
+  }
+}
+
+plog.sex.svg<-function(){
+  g.leg<-graph.empty(3,F)
+  V(g.leg)$label=c("Male","Female","Unidentified")
+  V(g.leg)$frame.color=c(brewer.pal(3,"Set1")[2],brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])
+  lay.leg<-matrix(c(seq(-5,5,length.out=3),rep(3,3)),byrow = F,nrow = 3)
+  #plot(g.leg,vertex.label.dist=2,layout=lay.leg,vertex.label.degree=-pi/2,vertex.label=V(g.leg)$label,vertex.size=20,vertex.shape="fcircle",vertex.frame.width=3,vertex.color=NA,vertex.label.cex=2,xlim=c(-5,5))
+  plot(0,xlim=c(-6,7),ylim=c(-1,2),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
+  xc<-seq(-5,5,length.out=3)
+  for(i in 1:3){
+   points(xc[i],1.5,pch=21,col=V(g.leg)$frame.color[i],lwd = 3,cex=3)
+   text(xc[i],1,V(g.leg)$label[i],col="black",lwd = 4,cex=2)
+  }
 }
 
 mycircle <- function(coords, v=NULL, params) {

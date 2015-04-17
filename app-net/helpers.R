@@ -1,4 +1,5 @@
 source("funkcje.R")
+#source("app-net/funkcje.R")
 
 judges.top.c<-function(data.judges){
   temp<-plyr::count(data.judges,"JudgeName")
@@ -19,8 +20,8 @@ g.court<-function(data.judges,data.judges.net){
   vert$DivisionCode2<-sapply(vert$DivisionCode2,function(x) unique(unlist(strsplit(x," "))))
   g<-graph.data.frame(data.judges.net,directed = F,vertices=vert)
   V(g)$vertex.shape<-NA
-  V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
-  V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
+  V(g)$vertex.shape<-ifelse(V(g)$JudgeSex!="FM","fcircle","fstar")
+  #V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
   g
 }
 
@@ -64,11 +65,24 @@ g.color.div<-function(g.simple.c,g.mark.matrix,divisions.sub){
   g<-g.simple.c
   div.un<-unique(unlist(V(g)$DivisionCode2))
   matrix<-g.mark.matrix
+#   list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
+#   names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+#   names(list)<-addalpha(names(list),0.8)
+#   list$labels<-as.vector(sapply(div.un,function(x) unique(divisions.sub$DivisionName2[which(divisions.sub$DivisionCode2==x)])))  
+  
+{if(dim(matrix)[2]==1){
+  list<-list(a=which(matrix[]))
+  names(list)<-brewer.pal(12,"Set3")[1]
+  list$labels<-divisions.sub$DivisionName
+}
+else{
   list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
   names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
   names(list)<-addalpha(names(list),0.8)
   list$labels<-as.vector(sapply(div.un,function(x) unique(divisions.sub$DivisionName2[which(divisions.sub$DivisionCode2==x)])))
-  list
+}
+} 
+list
 }
 
 g.color.pie<-function(g.simple.c){

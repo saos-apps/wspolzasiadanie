@@ -95,6 +95,7 @@ divisions<-unique(jdivisions[,-1]) #tabela1: divisions
 cCodes<-unique(divisions$CourtCode)
 DivisionName2<-gsub("Odwoławczy",replacement = "",x =divisions$DivisionName,fixed = F)
 DivisionName3<-as.vector(sapply(DivisionName2,function(x) paste(strsplit(x," ")[[1]][-c(1,2)],collapse = " ")))
+DivisionName3[which(DivisionName3=="")]<-DivisionName2[which(DivisionName3=="")]
 divisions$DivisionName2<-DivisionName3
 divisions$DivisionCode2<-NA
 for(i in 1:length(cCodes)){
@@ -103,7 +104,6 @@ for(i in 1:length(cCodes)){
     divisions$DivisionCode2[which(divisions$CourtCode==cCodes[i] & divisions$DivisionName2==divs.un[j])]<-j
   }
 }
-
 jdivisions<-sqldf("select jd.*, div.DivisionCode2 from jdivisions jd left join divisions div on jd.CourtCode=div.CourtCode and jd.DivisionCode=div.DivisionCode")
 
 jjudgmentType<-rbind(comm.judgmentType,app.judgmentType,cons.judgmentType,s.judgmentType)
@@ -203,8 +203,9 @@ temp$surname<-sub("/*[.]/*","",temp$surname,ignore.case = T)
 temp$sex[which(subLast(temp$name)=="a" & is.na(temp$sex) & nchar(temp$name)>1)]<-"F" #niedokładne
 temp$sex[which(subLast(temp$surname)=="a" & is.na(temp$sex)  & nchar(temp$surname)>1)]<-"F" #niedokładne
 left<-which(is.na(temp$sex))
-judges$JudgeSex<-NA
+judges$JudgeSex<-"FM"
 lapply(seq(nrow(temp)),function(x) judges$JudgeSex[llist1[[x]]]<<-temp$sex[x])
+judges$JudgeSex[which(is.na(judges$JudgeSex))]<-"FM"
 
 ## stworzenie sieci współzasiadania i 
 
@@ -219,6 +220,24 @@ write.table(divisions[1:10,],"app-net/data/divisions.csv")
 write.table(judges.net[1:10,],"app-net/data/judges.net.csv")
 write.table(courts[1:10,],"app-net/data/courts.csv")
 
+judgments$CourtCode[which(judgments$CourtCode=="00000001")]="1"
+judges$CourtCode[which(judges$CourtCode=="00000001")]="1"
+judges.net$CourtCode[which(judges.net$CourtCode=="00000001")]="1"
+divisions$CourtCode[which(divisions$CourtCode=="00000001")]="1"
+courts$CourtCode[which(courts$CourtCode=="00000001")]="1"
+
+judgments$CourtCode[which(judgments$CourtCode=="00000002")]="2"
+judges$CourtCode[which(judges$CourtCode=="00000002")]="2"
+judges.net$CourtCode[which(judges.net$CourtCode=="00000002")]="2"
+divisions$CourtCode[which(divisions$CourtCode=="00000002")]="2"
+courts$CourtCode[which(courts$CourtCode=="00000002")]="2"
+
+judgments$CourtCode[which(judgments$CourtCode=="00000003")]="3"
+judges$CourtCode[which(judges$CourtCode=="00000003")]="3"
+judges.net$CourtCode[which(judges.net$CourtCode=="00000003")]="3"
+divisions$CourtCode[which(divisions$CourtCode=="00000003")]="3"
+courts$CourtCode[which(courts$CourtCode=="00000003")]="3"
+
 saveRDS(judgments,"app-net/data/judgments.rds")
 saveRDS(judges,"app-net/data/judges.rds")
 saveRDS(divisions,"app-net/data/divisions.rds")
@@ -229,3 +248,7 @@ judgments<-readRDS("app-net/data/judgments.rds")
 judges<-readRDS("app-net/data/judges.rds")
 divisions<-readRDS("app-net/data/divisions.rds")
 courts<-readRDS("app-net/data/courts.rds")
+judges.net<-readRDS("app-net/data/judges.net.rds")
+
+
+
