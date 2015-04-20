@@ -1,5 +1,4 @@
 library(igraph)
-library(sqldf)
 library(ggplot2)
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {

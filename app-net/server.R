@@ -1,11 +1,10 @@
-require(gridSVG)
 require(shiny)
 require(ggplot2)
 require(igraph)
 require(plyr)
 require(data.table)
 require(RColorBrewer)
-require(shinydashboard)
+#require(shinydashboard)
 # server.R
 source("funkcje.R")
 source("helpers.R")
@@ -15,8 +14,13 @@ divisions<-readRDS("data/divisions.rds")
 judges.net<-readRDS("data/judges.net.rds")
 
 theme_set(theme_bw())
-
-shinyServer(function(input, output) {
+  
+shinyServer(function(input, output, session) {
+  
+  values <- reactiveValues(starting = TRUE)
+  session$onFlushed(function() {
+    values$starting <- FALSE
+  })
   
   output$select.court<-renderUI({
     courts.un<-divisions[!duplicated(divisions$CourtCode),]
@@ -87,13 +91,18 @@ shinyServer(function(input, output) {
   })
   
   k.dist<-reactive({
+    {if(vcount(subgraph.simplified.court())==0) return(NULL)
+     else w=as.vector(E(subgraph.simplified.court())$weight)
+    }
     k<-as.vector(degree(subgraph.simplified.court()))
     as.data.frame(k)
   })
   
   w.dist<-reactive({
     
-    if(ecount(subgraph.simplified.court())==0) w=0 else w=as.vector(E(subgraph.simplified.court())$weight)
+    {if(ecount(subgraph.simplified.court())==0) return(NULL)
+     else w=as.vector(E(subgraph.simplified.court())$weight)
+    }
     data.frame(w=w)
   })
   
@@ -114,46 +123,41 @@ shinyServer(function(input, output) {
   })
   
   plot.k <- reactive({
-    if(ecount(subgraph.simplified.court())==0) 
-      NULL
-    else {
-      br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-      ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - Number of direct connections to other judges",title="Histogram of k")
-    }
+    if(is.null(k.dist())){return(NULL)}  
+    br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
+    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - Number of direct connections to other judges",title="Histogram of k")
+    #}
   })
   
   plot.w <- reactive({
-    if(ecount(subgraph.simplified.court())==0) 
-      NULL
-    else {
+    if(is.null(w.dist())){return(NULL)}
       br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
       ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - Number of times two judges was in the same judgment team",title="Histogram of w")
-    }
+#     }
   })
   
   plot.comp <- reactive({
-    if(is.null(max.component()))
-      NULL
-    else
+      if(is.null(max.component())){return(NULL)}
       ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()+labs(y="Maximum component size [%]",title="Graph of the maximum component relative size in terms of number of nodes")+ylim(0,1)
   })
   
   plot.judges <- reactive({
+    if(nrow(judges.year())==0){return(NULL)}
     ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()+labs(y="Number of judges",title="Graph showing number of judges in court in following years")+ylim(0,max(judges.year()$number.judges))
   })
   
   plot.coop<- reactive({
-    if(is.null(judges.coop.year()))
-      NULL
-    else
+     if(is.null(judges.coop.year())) {return(NULL)}
       ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()+labs(y="Diversity of judging teams [%]",title="Graph showing diversity of judging teams in following years")+ylim(0,1)
   })
   
   plot.judgments <- reactive({
-    ggplot(judgments.year(),aes(x=year,y=number.judgments))+geom_line()+labs(y="Number of judgments",title="Graph showing number of judgments in specified court in following years")+ylim(0,max(judgments.year()$number.judgments))
+    if(nrow(judgments.year())==0){return(NULL)}
+       ggplot(judgments.year(),aes(x=year,y=number.judgments))+geom_line()+labs(y="Number of judgments",title="Graph showing number of judgments in specified court in following years")+ylim(0,max(judgments.year()$number.judgments))
   })
   
   plot.sex<-reactive({
+    if(nrow(subset.judges.clean())==0){return(NULL)}
     plot.sex.distribution(subset.judges.clean())
   })
   
@@ -187,28 +191,23 @@ shinyServer(function(input, output) {
   },width=550,height=800)
   
   output$plot.multi<-renderPlot({
+#     validate(
+#       #need(!is.null(plot.judgments()) & !is.null(plot.judges()) & !is.null(plot.sex()) & !is.null(plot.k()) & !is.null(plot.w()) & !is.null(plot.comp()) & !is.null(plot.coop()), 'Loading stats...')
+#       need(!is.null(plot.w),"Loading data...")
+#       )
     multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=1)
-    
   },width=1000,height=4000)
-  
-  output$multiImage<-renderImage({
-    svg("./images/multi.svg")
-    multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=1)
-    dev.off()
-    filename <- normalizePath(file.path('./images/multi.svg'))
-    list(src=filename,
-         alt="alt text",
-         width=4000,
-         height=1000
-    )
-  },deleteFile=TRUE)
-  
+
+#not used
   output$plot.top.chart<-renderPlot({
     top<-judges.top.court()
     ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")+scale_size_continuous(range = c(3,15))+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-N.of.judgments/35)), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=18))    
   },width=1000,height=750)
   
   output$topImage<-renderImage({
+    validate(
+      need(nrow(subset.judges.court())!=0,"Loading data...")
+    )
     top<-judges.top.court()
     outfile <- tempfile(fileext='.svg')
     g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=18))+scale_shape()+scale_size_continuous(range = c(3,12))
@@ -221,6 +220,7 @@ shinyServer(function(input, output) {
     )  
     }, deleteFile = TRUE)
   
+#not used
   output$times<-renderText({
     g<-subgraph.color.pie()
     lay<-subgraph.layout()
@@ -233,10 +233,13 @@ shinyServer(function(input, output) {
   })
   
   output$pieImage <- renderImage({
-    outfile <- tempfile(fileext='.svg')
-    svg(outfile)
+    validate(
+      need(vcount(subgraph.simplified.court())>0, "Loading data...")
+    )
     g<-subgraph.color.pie()
     lay<-subgraph.layout()
+    outfile <- tempfile(fileext='.svg')
+    svg(outfile)
     layout(matrix(c(rep(c(rep(1,3),2),3),rep(3,3),4), 4, 4, byrow = TRUE))
     par(mar=c(0,0,0,0))
     plog.pie.svg(g,lay)
@@ -252,5 +255,4 @@ shinyServer(function(input, output) {
          height=1000
          )
   }, deleteFile = TRUE)
-
 })
