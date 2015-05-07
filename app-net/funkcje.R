@@ -158,6 +158,7 @@ plog.legend.svg<-function(list){
 plog.sex.svg<-function(){
   g.leg<-graph.empty(3,F)
   V(g.leg)$label=c("Male","Female","Unidentified")
+  V(g.leg)$vertex.shape=c("fcircle","fcircle","fstar")
   V(g.leg)$frame.color=c(brewer.pal(3,"Set1")[2],brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])
   lay.leg<-matrix(c(seq(-5,5,length.out=3),rep(3,3)),byrow = F,nrow = 3)
   #plot(g.leg,vertex.label.dist=2,layout=lay.leg,vertex.label.degree=-pi/2,vertex.label=V(g.leg)$label,vertex.size=20,vertex.shape="fcircle",vertex.frame.width=3,vertex.color=NA,vertex.label.cex=2,xlim=c(-5,5))

@@ -4,6 +4,7 @@ require(igraph)
 require(plyr)
 require(data.table)
 require(RColorBrewer)
+require(sqldf)
 #require(shinydashboard)
 # server.R
 source("funkcje.R")
