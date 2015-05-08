@@ -6,8 +6,6 @@ require(dplyr)
 require(data.table)
 require(RColorBrewer)
 require(sqldf)
-#require(shinydashboard)
-# server.R
 source("funkcje.R")
 source("helpers.R")
 judgments<-readRDS("data/judgments.rds")
@@ -128,14 +126,12 @@ shinyServer(function(input, output, session) {
     if(is.null(k.dist())){return(NULL)}  
     br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
     ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - Number of direct connections to other judges",title="Histogram of k")
-    #}
   })
   
   plot.w <- reactive({
     if(is.null(w.dist())){return(NULL)}
       br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
       ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - Number of times two judges was in the same judgment team",title="Histogram of w")
-#     }
   })
   
   plot.comp <- reactive({
@@ -163,18 +159,13 @@ shinyServer(function(input, output, session) {
     plot.sex.distribution(subset.judges.clean())
   })
   
-  output$text1<-renderText({subgraph.summary()})
-  output$table1<-renderDataTable({max.component()})
-  output$table2<-renderDataTable({judges.coop.year()})
-  output$table3<-renderDataTable({court.divisions()})
-  
-  output$plot.net<-renderPlot({
-    g<-subgraph.simplified.court()
-    lay<-subgraph.layout()
-    list<-subgraph.mark.list()[-length(subgraph.mark.list())]
-    plog(g,lay,list)
-  },width=550,height=800)
-  
+#   output$text1<-renderText({subgraph.summary()})
+#   output$table1<-renderDataTable({max.component()})
+#   output$table2<-renderDataTable({judges.coop.year()})
+#   output$table3<-renderDataTable({court.divisions()})
+# 
+
+# stare rysowanie sieci bez svg
   output$plot.pie<-renderPlot({
     g<-subgraph.color.pie()
     lay<-subgraph.layout()
@@ -186,25 +177,10 @@ shinyServer(function(input, output, session) {
     par(mar=c(0,0,3,0))
     plog.sex()
   },width=1000,height=800)
-  
-  output$plot.legend<-renderPlot({
-    par(mar=c(0,0,0,0))
-    plog.legend2(g.color.div(subgraph.simplified.court(),subgraph.mark.matrix(),court.divisions()))
-  },width=550,height=800)
-  
+
   output$plot.multi<-renderPlot({
-#     validate(
-#       #need(!is.null(plot.judgments()) & !is.null(plot.judges()) & !is.null(plot.sex()) & !is.null(plot.k()) & !is.null(plot.w()) & !is.null(plot.comp()) & !is.null(plot.coop()), 'Loading stats...')
-#       need(!is.null(plot.w),"Loading data...")
-#       )
     multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=1)
   },width=1000,height=4000)
-
-#not used
-  output$plot.top.chart<-renderPlot({
-    top<-judges.top.court()
-    ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")+scale_size_continuous(range = c(3,15))+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-N.of.judgments/35)), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=18))    
-  },width=1000,height=750)
   
   output$topImage<-renderImage({
     validate(
@@ -223,16 +199,16 @@ shinyServer(function(input, output, session) {
     }, deleteFile = TRUE)
   
 #not used
-  output$times<-renderText({
-    g<-subgraph.color.pie()
-    lay<-subgraph.layout()
-    t.pie<-system.time(plog.pie(g,lay))[1]
-    t.multi<-system.time(multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=2))[1]
-    t.lay<-system.time(subgraph.layout())[1]
-    t.g<-system.time(subgraph.court())[1]
-    t.sim<-system.time(subgraph.simplified.court())[1]
-    paste("Times",t.lay,t.g,t.sim,t.pie,t.multi,sep=";")
-  })
+#   output$times<-renderText({
+#     g<-subgraph.color.pie()
+#     lay<-subgraph.layout()
+#     t.pie<-system.time(plog.pie(g,lay))[1]
+#     t.multi<-system.time(multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=2))[1]
+#     t.lay<-system.time(subgraph.layout())[1]
+#     t.g<-system.time(subgraph.court())[1]
+#     t.sim<-system.time(subgraph.simplified.court())[1]
+#     paste("Times",t.lay,t.g,t.sim,t.pie,t.multi,sep=";")
+#   })
   
   output$pieImage <- renderImage({
     validate(
@@ -242,7 +218,6 @@ shinyServer(function(input, output, session) {
     lay<-subgraph.layout()
     outfile <- tempfile(fileext='.svg')
     svg(outfile)
-    #layout(matrix(c(rep(c(rep(1,3),2),2),rep(1,3),3), 3, 4, byrow = TRUE))
     layout(matrix(c(rep(c(rep(1,3),2),2),rep(1,3),3,rep(4,4)), 4, 4, byrow = TRUE))
     par(mar=c(0,0,0,0))
     plog.pie.svg(g,lay)

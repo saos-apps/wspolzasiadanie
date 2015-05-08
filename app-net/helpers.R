@@ -1,5 +1,4 @@
 source("funkcje.R")
-#source("app-net/funkcje.R")
 
 judges.top.c<-function(data.judges){
   temp<-plyr::count(data.judges,"JudgeName")
@@ -21,15 +20,12 @@ g.court<-function(data.judges,data.judges.net){
   g<-graph.data.frame(data.judges.net,directed = F,vertices=vert)
   V(g)$vertex.shape<-NA
   V(g)$vertex.shape<-"fcircle"
-    #ifelse(V(g)$JudgeSex!="FM","fcircle","fstar")
-  #V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
   g
 }
 
 g.simplify.c<-function(g.court){
   g<-simplify(g.court,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
   if(ecount(g)>0) E(g)$weight<-sapply(E(g)$CourtCode,length) else E(g)$weight=0
-  #E(g)$type="real"
   g    
 }
 
