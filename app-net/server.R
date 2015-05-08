@@ -2,6 +2,7 @@ require(shiny)
 require(ggplot2)
 require(igraph)
 require(plyr)
+require(dplyr)
 require(data.table)
 require(RColorBrewer)
 require(sqldf)
@@ -24,7 +25,7 @@ shinyServer(function(input, output, session) {
   })
   
   output$select.court<-renderUI({
-    courts.un<-divisions[!duplicated(divisions$CourtCode),]
+    courts.un<-divisions[!duplicated(divisions$CourtCode),] %>% dplyr::arrange(CourtName)
     list1<-as.list(courts.un$CourtCode)
     names(list1)<-courts.un$CourtName
     selectInput("select.court",label=h3("Select the court:"),choices=list1)
@@ -241,7 +242,8 @@ shinyServer(function(input, output, session) {
     lay<-subgraph.layout()
     outfile <- tempfile(fileext='.svg')
     svg(outfile)
-    layout(matrix(c(rep(c(rep(1,3),2),3),rep(3,3),4), 4, 4, byrow = TRUE))
+    #layout(matrix(c(rep(c(rep(1,3),2),2),rep(1,3),3), 3, 4, byrow = TRUE))
+    layout(matrix(c(rep(c(rep(1,3),2),2),rep(1,3),3,rep(4,4)), 4, 4, byrow = TRUE))
     par(mar=c(0,0,0,0))
     plog.pie.svg(g,lay)
     par(mar=c(0,0,0,0))

@@ -274,7 +274,7 @@ fun1<-function(array,njudges,order,nnext){
 
 #error x not found
 
-c.code1<-max(courts$CourtCode[which(regexpr("Wroc",courts$CourtName)>0)])
+c.code1<-max(courts$CourtCode[which(regexpr("Krajowa",courts$CourtName)>0)])
 courts[which(regexpr("Wroc",courts$CourtName)>0),]
 c.code1<-2
 judges.sub<-subset(judges,CourtCode==c.code1)
@@ -291,97 +291,6 @@ m.list<-g.mark.list(g.sim,m.matrix)
 list<-g.color.div(g.sim,m.matrix,divs)
 layg<-layout.fruchterman.reingold(g.sim,weights=E(g.sim)$weight,area=10000*vcount(g.sim)^2,repulserad=50000*vcount(g.sim)^3)
 
-addalpha(as.character(unique(V(g.sim)$colour)),0.8)==addalpha(brewer.pal(12,"Set3")[1],0.8)
 
-#"#8DD3C7CC"
-#"#8DD3C7BF"
-top<-judges.top.c(judges.sub)
-g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()
-g1<-g1+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")
-g1<-g1+scale_size_continuous(range = c(3,15))
-+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-N.of.judgments/35)), yend = nrow(top):1,size=0.7)
-+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=8),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=18))
 
-g.court<-function(data.judges,data.judges.net){
-  data.judges<-judges.sub
-  data.judges.net<-judgments.sub
-  dt<-data.table(data.judges)
-  vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode2=paste(DivisionCode2,collapse=" ")), by=c("JudgeName")]
-  vert$DivisionCode2<-sapply(vert$DivisionCode2,function(x) unique(unlist(strsplit(x," "))))
-  g<-graph.data.frame(data.judges.net,directed = F,vertices=vert)
-  V(g)$vertex.shape<-NA
-  V(g)$vertex.shape<-ifelse(V(g)$JudgeSex!="FM","fcircle","fstar")
-  #V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
-  g
-}
-
-g.mark.list<-function(g.simple.c,g.mark.matrix){
-  g.mark.matrix<-m.matrix
-  g<-g.sim
-  div.un<-unique(unlist(V(g)$DivisionCode2))
-  matrix<-g.mark.matrix
-  list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
-  names(list)<-unique(V(g.simple.c)$colour)
-  list$labels<-div.un
-  cl<-clusters(g)
-  ord<-order(cl$csize,decreasing = T)
-  list2<-sapply(list[-length(list)],function(x) {
-    a<-cl$membership[x]  
-    ll<-lapply(unique(cl$membership[x]),function(y){
-      x[which(a==y)]
-    })
-  })
-  list2<-unlist(list2,recursive = F)
-  names(list2)<-substr(names(list2),1,9)
-  list2$labels<-div.un
-  list2
-}
-
-g<-g.sim
-divisions.sub=divs
-div.un<-unique(unlist(V(g)$DivisionCode2))
-matrix<-m.matrix
-
-{if(dim(matrix)[2]==1){
-  list<-list(a=which(matrix[]))
-  names(list)<-unique(V(g.sim)$colour)
-  list$labels<-divisions.sub$DivisionName
-}
- else{
-  list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
-  names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
-  names(list)<-addalpha(names(list),0.8)
-  list$labels<-as.vector(sapply(div.un,function(x) unique(divisions.sub$DivisionName2[which(divisions.sub$DivisionCode2==x)])))
- }
-} 
-
-vc<-length(list)-1
-#   g.leg<-graph.empty(vc,F)
-#   V(g.leg)$label=list$labels
-#   V(g.leg)$color=names(list[-length(list)])
-#   lay.leg<-matrix(c(rep(0,vc),seq(1,vc)),byrow = F,nrow = vc)
-#   plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=10)
-colors<-names(list[-length(list)])
-labels<-wrap.labels(ifelse(nchar(list$labels)>55,paste(substr(list$labels,1,55),"...",sep=""),list$labels),22)
-#   text(x=-.9,y=seq(1,-1,length.out=length(list$labels)),labels=label,pos=4,adj=c(1,1),cex=2,ylim=c(-1,1.5),xlim=c(-1.3,1)); #ylim=c(-.5,.5)
-#   text(x=-1.1,y=1.3,labels="Divisions:",cex=2,pos=4,adj=c(1,1))
-
-plot(0,xlim=c(-5,5),ylim=c(-10,10),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
-text(-5,10,"Divisions:",col="black",lwd = 3,cex=2,pos=4)  
-yc<-seq(8,-10,length.out=vc)
-for(i in 1:vc){
-  points(-4.5,yc[i],pch=21,bg=colors[i],col="black",cex=2,lwd=1)
-  text(-4.2,yc[i],labels[i],col="black",lwd = 0.75,cex=1.2,pos=4)
-}
-
-# trest TK, ODW, SN
-
-#00000002 Sąd Najwyższy
-#00000001                 Trybunał Konstytucyjny
-#00000003 Krajowa Izba Odwoławcza
-
-nrow(judges.net[which(judges$CourtCode=="00000003"),])
-
-c.code1="2"
-subset(divisions,CourtCode==c.code1)
 

@@ -15,7 +15,7 @@ shinyUI(fluidPage(
     ),
     mainPanel( 
       tabsetPanel(
-        #tabPanel("Tests", textOutput("times"),textOutput("text1"),dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
+        tabPanel("Tests", textOutput("times"),textOutput("text1")),#,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
         tabPanel("Stats",plotOutput("plot.multi")),
         tabPanel("Network",imageOutput("pieImage")),
         #tabPanel("Top chart",  plotOutput("plot.top.chart"))

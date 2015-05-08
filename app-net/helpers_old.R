@@ -1,5 +1,4 @@
 source("funkcje.R")
-#source("app-net/funkcje.R")
 
 judges.top.c<-function(data.judges){
   temp<-plyr::count(data.judges,"JudgeName")
@@ -16,37 +15,36 @@ judges.top.c<-function(data.judges){
 
 g.court<-function(data.judges,data.judges.net){
   dt<-data.table(data.judges)
-  vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode2=paste(DivisionCode2,collapse=" ")), by=c("JudgeName")]
-  vert$DivisionCode2<-sapply(vert$DivisionCode2,function(x) unique(unlist(strsplit(x," "))))
+  vert <- dt[, list(JudgeSex=head(JudgeSex,1), DivisionCode=paste(DivisionCode,collapse=" ")), by=c("JudgeName")]
+  vert$DivisionCode<-sapply(vert$DivisionCode,function(x) unique(unlist(strsplit(x," "))))
   g<-graph.data.frame(data.judges.net,directed = F,vertices=vert)
   V(g)$vertex.shape<-NA
-  V(g)$vertex.shape<-"fcircle"
-    #ifelse(V(g)$JudgeSex!="FM","fcircle","fstar")
-  #V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
+  V(g)$vertex.shape<-ifelse(V(g)$JudgeSex=="M","ftriangle",ifelse(V(g)$JudgeSex=="F","fcircle","fstar"))
+  V(g)$vertex.shape[which(is.na(V(g)$vertex.shape))]<-"fstar"
   g
 }
 
 g.simplify.c<-function(g.court){
   g<-simplify(g.court,remove.multiple = T,remove.loops = T,edge.attr.comb ="concat" )
   if(ecount(g)>0) E(g)$weight<-sapply(E(g)$CourtCode,length) else E(g)$weight=0
-  #E(g)$type="real"
+  E(g)$type="real"
   g    
 }
 
 g.mark.matrix<-function(g.simple.c){
   g<-g.simple.c
-  div.un<-unique(unlist(V(g)$DivisionCode2))
-  matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode2,function(y) x %in% y))
+  div.un<-unique(unlist(V(g)$DivisionCode))
+  matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))
   matrix
 }
 
 g.mark.list<-function(g.simple.c,g.mark.matrix){
   g<-g.simple.c
-  div.un<-unique(unlist(V(g)$DivisionCode2))
+  div.un<-unique(unlist(V(g)$DivisionCode))
   matrix<-g.mark.matrix
   list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
   names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
-  names(list)<-addalpha(names(list),0.9)
+  names(list)<-addalpha(names(list),0.8)
   list$labels<-div.un
   cl<-clusters(g)
   ord<-order(cl$csize,decreasing = T)
@@ -64,40 +62,28 @@ g.mark.list<-function(g.simple.c,g.mark.matrix){
 
 g.color.div<-function(g.simple.c,g.mark.matrix,divisions.sub){
   g<-g.simple.c
-  div.un<-unique(unlist(V(g)$DivisionCode2))
+  div.un<-unique(unlist(V(g)$DivisionCode))
   matrix<-g.mark.matrix
-#   list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
-#   names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
-#   names(list)<-addalpha(names(list),0.8)
-#   list$labels<-as.vector(sapply(div.un,function(x) unique(divisions.sub$DivisionName2[which(divisions.sub$DivisionCode2==x)])))  
-  
-{if(dim(matrix)[2]==1){
-  list<-list(a=which(matrix[]))
-  names(list)<-brewer.pal(9,"Set1")[1]
-  list$labels<-divisions.sub$DivisionName
-}
-else{
   list<-sapply(seq(length(div.un)),function(x) which(matrix[,x]))
-  names(list)<-rep(brewer.pal(9,"Set1"),ceiling(length(div.un)/12))[seq(length(div.un))]
+  names(list)<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
   names(list)<-addalpha(names(list),0.8)
-  list$labels<-as.vector(sapply(div.un,function(x) unique(divisions.sub$DivisionName2[which(divisions.sub$DivisionCode2==x)])))
-}
-} 
-list
+  list$labels<-as.vector(sapply(div.un,function(x) divisions.sub$DivisionName[which(divisions.sub$DivisionCode==x)]))
+  #list$labels<-div.un
+  #sapply(list$labels,function(x) divs$DivisionName[which(divs$DivisionCode==x)])
+  #data.frame(division=div.un,colour=colours)
+  list
 }
 
 g.color.pie<-function(g.simple.c){
   g<-g.simple.c
-  div.un<-unique(unlist(V(g)$DivisionCode2))
-  matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode2,function(y) x %in% y))  
-  names<-rep(brewer.pal(9,"Set1"),ceiling(length(div.un)/9))[seq(length(div.un))]
-  names<-addalpha(names,0.7)
-  values<-lapply(V(g)$DivisionCode2,function(x) rep(1/length(x),length(x)))
+  div.un<-unique(unlist(V(g)$DivisionCode))
+  matrix<-sapply(div.un,function(x) sapply(V(g)$DivisionCode,function(y) x %in% y))  
+  names<-rep(brewer.pal(12,"Set3"),ceiling(length(div.un)/12))[seq(length(div.un))]
+  names<-addalpha(names,0.75)
+  values<-lapply(V(g)$DivisionCode,function(x) rep(1/length(x),length(x)))
   colors<-lapply(seq(nrow(matrix)),function(x) names[matrix[x,]])
-  shapes<-sapply(seq(vcount(g)),function(x) ifelse(length(values[[x]])>1,"pie",V(g)$vertex.shape[x]))
   V(g)$colour<-colors
   V(g)$pie.values<-values
-  V(g)$vertex.shape<-shapes
   g
 }
 

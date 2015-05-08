@@ -46,9 +46,10 @@ addalpha <- function(colors, alpha=1.0) {
 
 wrap.it <- function(x, len)
 { 
-  sapply(x, function(y) paste(strwrap(y, len), 
-                              collapse = "\n"), 
-         USE.NAMES = FALSE)
+  sapply(x, function(y) {tmp<-strwrap(y, len);
+                         if(length(tmp)>2){paste(paste(tmp[1:2], collapse = "\n"),"...",sep="")}
+                         else {paste(tmp, collapse = "\n")}
+                         }, USE.NAMES = FALSE)
 }
 
 wrap.labels <- function(x, len)
@@ -113,10 +114,11 @@ plog<-function(g,layout1=layout.auto,list=NULL){
 plog.pie<-function(g,layout1=layout.auto){
   plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=V(g)$vertex.shape,vertex.pie=V(g)$pie.values,vertex.pie.color=V(g)$colour,edge.color="grey45",edge.width=1,
               edge.curved=0.15,layout=layout1,vertex.pie.lty=1,vertex.color=V(g)$colour,
-              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
+              #vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
+              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(5,"Set3")[5],ifelse(V(g)$JudgeSex=="F",brewer.pal(4,"Set3")[4],brewer.pal(8,"Set2")[8])),vertex.frame.width=2
               )
-  par(new=TRUE)
-  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=ifelse(V(g)$vertex.shape=="pie","fcircle",V(g)$vertex.shape),edge.color=NA,edge.width=0,
+  par(new=TRUE) #ifelse(V(g)$vertex.shape=="pie","fcircle",V(g)$vertex.shape)
+  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape="fcircle",edge.color=NA,edge.width=0,
               layout=layout1,vertex.color=NA,
               vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
   )
@@ -125,48 +127,55 @@ plog.pie<-function(g,layout1=layout.auto){
 plog.pie.svg<-function(g,layout1=layout.auto){
   plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=V(g)$vertex.shape,vertex.pie=V(g)$pie.values,vertex.pie.color=V(g)$colour,edge.color="grey45",edge.width=1,
               edge.curved=0.15,layout=layout1,vertex.pie.lty=1,vertex.color=V(g)$colour,
-              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=2
-  )
+              vertex.frame.color=NA,vertex.frame.width=2
+  ) # ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9]))
   par(new=TRUE)
-  plot.igraph(g,vertex.size=4,vertex.label=NA,vertex.shape=ifelse(V(g)$vertex.shape=="pie","fcircle",V(g)$vertex.shape),edge.color=NA,edge.width=0,
+  plot.igraph(g,vertex.size=4.5,vertex.label=NA,vertex.shape="fcircle",edge.color=NA,edge.width=0, # ifelse(V(g)$vertex.shape=="pie","fcircle",V(g)$vertex.shape)
               layout=layout1,vertex.color=NA,
-              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=1.2
+              #vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(3,"Set1")[2],ifelse(V(g)$JudgeSex=="F",brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])),vertex.frame.width=1.2
+              vertex.frame.color=ifelse(V(g)$JudgeSex=="M",brewer.pal(5,"Set3")[5],ifelse(V(g)$JudgeSex=="F",brewer.pal(4,"Set3")[4],brewer.pal(8,"Set2")[8])),vertex.frame.width=1.5
   )
 }
 
 plog.legend.svg<-function(list){
   vc<-length(list)-1
-#   g.leg<-graph.empty(vc,F)
-#   V(g.leg)$label=list$labels
-#   V(g.leg)$color=names(list[-length(list)])
-#   lay.leg<-matrix(c(rep(0,vc),seq(1,vc)),byrow = F,nrow = vc)
-#   plot(g.leg,vertex.label.dist=4,layout=lay.leg,vertex.label.degree=0,vertex.label=NA,vertex.size=10)
   colors<-names(list[-length(list)])
-  labels<-wrap.labels(ifelse(nchar(list$labels)>55,paste(substr(list$labels,1,55),"...",sep=""),list$labels),22)
-#   text(x=-.9,y=seq(1,-1,length.out=length(list$labels)),labels=label,pos=4,adj=c(1,1),cex=2,ylim=c(-1,1.5),xlim=c(-1.3,1)); #ylim=c(-.5,.5)
-#   text(x=-1.1,y=1.3,labels="Divisions:",cex=2,pos=4,adj=c(1,1))
-  
-  plot(0,xlim=c(-5,5),ylim=c(-10,10),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
-  text(-5,10,"Divisions:",col="black",lwd = 3,cex=2,pos=4)  
-  yc<-seq(8,-10,length.out=vc)
+  labels<-wrap.labels(list$labels,27)
+  plot(0,xlim=c(-5,5),ylim=c(-10,10),type = "n",frame.plot = F,axes=F, xlab="", ylab="",cex=2)
+  text(-5,10,"Wydziały:",col="black",lwd = 3,cex=1.0,pos=4)  
+  #yc<-seq(8,-10,length.out=vc)
+  #twol<-ifelse(regexpr("\n",lab)>0,1,0)
+  #(nchar(list$labels) - (nchar(list$labels) %% 22) )/22 +1
+  yc<-rep(NA,vc)
+  yc[1]<-8
+  if(vc>1){
+    for(i in 2:vc){
+      yc[i]<-yc[i-1]-1.5
+    }
+  }
+  #yc<-8-1.5*(seq(vc)-1)*lines
   for(i in 1:vc){
     points(-4.5,yc[i],pch=21,bg=colors[i],col="black",cex=2,lwd=1)
-    text(-4.2,yc[i],labels[i],col="black",lwd = 0.75,cex=1.2,pos=4)
+    text(-4.2,yc[i]-0.1,labels[i],col="black",lwd = 0.75,cex=1.0,pos=4)
   }
 }
-
 plog.sex.svg<-function(){
-  g.leg<-graph.empty(3,F)
-  V(g.leg)$label=c("Male","Female","Unidentified")
-  V(g.leg)$vertex.shape=c("fcircle","fcircle","fstar")
-  V(g.leg)$frame.color=c(brewer.pal(3,"Set1")[2],brewer.pal(3,"Set1")[1],brewer.pal(9,"Set1")[9])
+  #g.leg<-graph.empty(3,F)
+  #V(g.leg)
+  label=c("Kobieta","Mężczyzna","Brak danych")
+  #V(g.leg)$vertex.shape=c("fcircle","fcircle","fstar")
+  #V(g.leg)$
+  #frame.color=c(brewer.pal(3,"Set1")[1],brewer.pal(3,"Set1")[2],brewer.pal(9,"Set1")[9])
+  frame.color=c(brewer.pal(5,"Set3")[5],brewer.pal(4,"Set3")[4],brewer.pal(8,"Set2")[8])
   lay.leg<-matrix(c(seq(-5,5,length.out=3),rep(3,3)),byrow = F,nrow = 3)
   #plot(g.leg,vertex.label.dist=2,layout=lay.leg,vertex.label.degree=-pi/2,vertex.label=V(g.leg)$label,vertex.size=20,vertex.shape="fcircle",vertex.frame.width=3,vertex.color=NA,vertex.label.cex=2,xlim=c(-5,5))
-  plot(0,xlim=c(-6,7),ylim=c(-1,2),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
-  xc<-seq(-5,5,length.out=3)
-  for(i in 1:3){
-   points(xc[i],1.5,pch=21,col=V(g.leg)$frame.color[i],lwd = 3,cex=3)
-   text(xc[i],1,V(g.leg)$label[i],col="black",lwd = 4,cex=2)
+  #plot(0,xlim=c(-6,7),ylim=c(-1,2),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
+  plot(0,xlim=c(-1,1),ylim=c(-6,7),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
+  #xc<-seq(-5,5,length.out=3)
+  yc<-seq(5,0,length.out=3)
+  for(i in 1:3){#V(g.leg)$
+   points(-1,yc[i],pch=21,col=frame.color[i],lwd = 2,cex=2)
+   text(-0.95,yc[i],label[i],col="black",lwd = 0.75,cex=1.0,pos = 4)
   }
 }
 
