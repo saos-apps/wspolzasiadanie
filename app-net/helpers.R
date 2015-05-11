@@ -120,17 +120,18 @@ list1
 }
 
 judgm.year<-function(subset.judges.c){
-  sub<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),]
-  df<-plyr::count(sub,"judgmentYear")
-  names(df)<-c("year","number.judgments")
+  df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")
+  #sub$Data<-as.factor(as.yearmon(sub$judgmentDate))
+  #df<-plyr::count(sub,"Data")
+  names(df)<-c("Data","number.judgments")
   df
 }
 
 j.year<-function(subset.judges.c){
-  temp<-plyr::count(subset.judges.c,c("JudgeName","judgmentYear"))
+  temp<-subset.judges.c %>% dplyr::mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count(c("JudgeName","Data"))
   names(temp)[3]<-"dd"
-  df<-plyr::count(temp,"judgmentYear")
-  names(df)<-c("year","number.judges")
+  df<-plyr::count(temp,"Data")
+  names(df)<-c("Data","number.judges")
   df
 }
 

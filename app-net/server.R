@@ -1,3 +1,6 @@
+require(tidyr)
+require(scales)
+require(zoo)
 require(shiny)
 require(ggplot2)
 require(igraph)
@@ -26,7 +29,7 @@ shinyServer(function(input, output, session) {
     courts.un<-divisions[!duplicated(divisions$CourtCode),] %>% dplyr::arrange(CourtName)
     list1<-as.list(courts.un$CourtCode)
     names(list1)<-courts.un$CourtName
-    selectInput("select.court",label=h3("Select the court:"),choices=list1)
+    selectInput("select.court",label=h3("Wybierz sąd:"),choices=list1)
   })
   output$plottemp<-renderPlot({
     plog.legend2(g.color.div(subgraph.simplified.court(),subgraph.mark.matrix(),court.divisions()))
@@ -74,9 +77,9 @@ shinyServer(function(input, output, session) {
     layout.fruchterman.reingold(g,weights=E(g)$weight,area=10000*vcount(g)^2,repulserad=50000*vcount(g)^3)
   })
   
-  judges.coop.year<-reactive({
-    j.coop.year(subset.judges.court(),subset.judgments.court(),subgraph.simplified.court())
-  })
+#   judges.coop.year<-reactive({
+#     j.coop.year(subset.judges.court(),subset.judgments.court(),subgraph.simplified.court())
+#   })
   
   subgraph.summary<-reactive({
     g<-subgraph.court()
@@ -107,60 +110,100 @@ shinyServer(function(input, output, session) {
   })
   
   judgments.year<-reactive({
+    validate(
+      need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+    )
     judgm.year(subset.judges.court())
   })
   
   judges.year<-reactive({
+    validate(
+      need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+    )
     j.year(subset.judges.court())
   })
-  
-  max.component<-reactive({    
-    max.comp(subgraph.court())
+
+  team.size<-reactive({
+    judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
   })
+
+  team.types<-reactive({
+    validate(
+      need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+    )
+    judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
+    temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) ##%>% mutate(typet=do.call(paste0, temp[c(2, 3)]))
+  })
+#   
+#   max.component<-reactive({    
+#     max.comp(subgraph.court())
+#   })
   
   subset.judges.clean<-reactive({
     subset(subset.judges.court(),!is.na(JudgeSex))
   })
   
-  plot.k <- reactive({
+  output$plot.k <- renderPlot({
     if(is.null(k.dist())){return(NULL)}  
     br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - Number of direct connections to other judges",title="Histogram of k")
+    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - liczba bezpośrednich połączeń z innymi sędziamy",title="Histogram zmiennej k")
   })
   
-  plot.w <- reactive({
+  output$plot.w <- renderPlot({
     if(is.null(w.dist())){return(NULL)}
       br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-      ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - Number of times two judges was in the same judgment team",title="Histogram of w")
+      ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",title="Histogram zmiennej w")
   })
+#   
+#   plot.comp <- reactive({
+#       if(is.null(max.component())){return(NULL)}
+#       ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()+labs(y="Rozmiar największego komponentu [%]",title="Graph of the maximum component relative size in terms of number of nodes")+ylim(0,1)
+#   })
   
-  plot.comp <- reactive({
-      if(is.null(max.component())){return(NULL)}
-      ggplot(max.component(),aes(x=year,y=size.max.component)) + geom_line()+labs(y="Maximum component size [%]",title="Graph of the maximum component relative size in terms of number of nodes")+ylim(0,1)
-  })
-  
-  plot.judges <- reactive({
+  output$plot.judges <- renderPlot({
     if(nrow(judges.year())==0){return(NULL)}
-    ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()+labs(y="Number of judges",title="Graph showing number of judges in court in following years")+ylim(0,max(judges.year()$number.judges))
+    #ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()+labs(y="Number of judges",title="Graph showing number of judges in court in following years")+ylim(0,max(judges.year()$number.judges))
+    if(length(judges.year()$Data)<20){br<-judges.year()$Data[seq(1,length(judges.year()$Data),by=4)]} else {br<-judges.year()$Data[round(seq(1,length(judges.year()$Data),length.out=20),0)]}
+    ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +
+      geom_point(stat='summary', fun.y=sum) +
+      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=judges.year()$Data,breaks=br)+
+      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judges.year()$number.judges))
+    
   })
+#   
+#   plot.coop<- reactive({
+#      if(is.null(judges.coop.year())) {return(NULL)}
+#       ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()+labs(y="Diversity of judging teams [%]",title="Graph showing diversity of judging teams in following years")+ylim(0,1)
+#   })
   
-  plot.coop<- reactive({
-     if(is.null(judges.coop.year())) {return(NULL)}
-      ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()+labs(y="Diversity of judging teams [%]",title="Graph showing diversity of judging teams in following years")+ylim(0,1)
-  })
-  
-  plot.judgments <- reactive({
+  output$plot.judgments <- renderPlot({
+    
     if(nrow(judgments.year())==0){return(NULL)}
-       ggplot(judgments.year(),aes(x=year,y=number.judgments))+geom_line()+labs(y="Number of judgments",title="Graph showing number of judgments in specified court in following years")+ylim(0,max(judgments.year()$number.judgments))
+    if(length(judgments.year()$Data)<20){br<-judgments.year()$Data[seq(1,length(judgments.year()$Data),by=4)]} else {br<-judgments.year()$Data[round(seq(1,length(judgments.year()$Data),length.out=20),0)]}
+    ggplot(judgments.year(), aes(x=Data, y=number.judgments, group=1)) +
+      geom_point(stat='summary', fun.y=sum) +
+      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=judgments.year()$Data,breaks=br)+
+      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judgments.year()$number.judgments))
+  })
+
+  output$plot.team.size<-renderPlot({
+    ggplot(team.size(),aes(x=liczba.s))+geom_histogram()+xlab("Liczba sędziów w składzie")+ylab("Liczba wystąpień")
   })
   
+  output$plot.team.types<-renderPlot({
+    validate(
+      need(nrow(team.types())!=0,"Trwa ładowanie danych...")
+    )
+    qplot(typestring,data=team.types(),geom="bar")+xlab("Typ składu sędziowskiego")+ylab("Liczba wystąpień")
+  })
+
   plot.sex<-reactive({
     if(nrow(subset.judges.clean())==0){return(NULL)}
     plot.sex.distribution(subset.judges.clean())
   })
   
 #   output$text1<-renderText({subgraph.summary()})
-#   output$table1<-renderDataTable({max.component()})
+   output$table1<-renderDataTable({team.types()})
 #   output$table2<-renderDataTable({judges.coop.year()})
 #   output$table3<-renderDataTable({court.divisions()})
 # 
@@ -179,12 +222,15 @@ shinyServer(function(input, output, session) {
   },width=1000,height=800)
 
   output$plot.multi<-renderPlot({
-    multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=1)
-  },width=1000,height=4000)
+    #multiplot(plot.judgments(),plot.judges(),plot.sex(),plot.k(),plot.w(),plot.comp(),plot.coop(),cols=1)
+    #multiplot(plot.judgments(),plot.judges(),plot.k(),plot.w(),plot.team.size(),plot.team.types(),cols=1) 
+    #multiplot(plot.judgments(),cols=1)
+    
+  },width=1000,height=2850)
   
   output$topImage<-renderImage({
     validate(
-      need(nrow(subset.judges.court())!=0,"Loading data...")
+      need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
     )
     top<-judges.top.court()
     outfile <- tempfile(fileext='.svg')
@@ -212,7 +258,7 @@ shinyServer(function(input, output, session) {
   
   output$pieImage <- renderImage({
     validate(
-      need(vcount(subgraph.simplified.court())>0, "Loading data...")
+      need(vcount(subgraph.simplified.court())>0, "Trwa ładowanie danych...")
     )
     g<-subgraph.color.pie()
     lay<-subgraph.layout()

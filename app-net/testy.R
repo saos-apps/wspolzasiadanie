@@ -1,24 +1,21 @@
-require(data.table)
-require(plyr)
-require(saos)
-require(devtools)
+require(tidyr)
+require(scales)
+require(zoo)
 require(shiny)
-require(datasets)
-require(sqldf)
-require(date)
-require(stringi)
+require(ggplot2)
 require(igraph)
-require(XML)
-require(httr)
-require(ggmap)
+require(plyr)
+require(dplyr)
+require(data.table)
 require(RColorBrewer)
-require(gridSVG)
-
-judgments<-readRDS("app-net/data/judgments.rds")
-judges<-readRDS("app-net/data/judges.rds")
-divisions<-readRDS("app-net/data/divisions.rds")
-courts<-readRDS("app-net/data/courts.rds")
-judges.net<-readRDS("app-net/data/judges.net.rds")
+require(sqldf)
+source("funkcje.R")
+source("helpers.R")
+judgments<-readRDS("data/judgments.rds")
+judges<-readRDS("data/judges.rds")
+divisions<-readRDS("data/divisions.rds")
+courts<-readRDS("data/courts.rds")
+judges.net<-readRDS("data/judges.net.rds")
 
 ## narysowanie sieci wszystkich sędziów
 g1<-graph.data.frame(judges.net,directed = F,vertices = NULL)
@@ -274,7 +271,7 @@ fun1<-function(array,njudges,order,nnext){
 
 #error x not found
 
-c.code1<-max(courts$CourtCode[which(regexpr("Krajowa",courts$CourtName)>0)])
+c.code1<-max(courts$CourtCode[which(regexpr("Wroc",courts$CourtName)>0)])
 courts[which(regexpr("Wroc",courts$CourtName)>0),]
 c.code1<-2
 judges.sub<-subset(judges,CourtCode==c.code1)
@@ -291,6 +288,28 @@ m.list<-g.mark.list(g.sim,m.matrix)
 list<-g.color.div(g.sim,m.matrix,divs)
 layg<-layout.fruchterman.reingold(g.sim,weights=E(g.sim)$weight,area=10000*vcount(g.sim)^2,repulserad=50000*vcount(g.sim)^3)
 
+judges.sub<-subset(judges,CourtCode==c.code1)
+judgm.count<-plyr::count(judges.sub,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
+ggplot(judgm.count,aes(x=liczba.s))+geom_histogram()+xlab("Liczba sędziów w składzie")+ylab("Liczba wystąpień")
+
+judges.sub<-subset(judges,CourtCode==c.code1)
+judges.sub<-subset(judges.sub,!is.na(judges.sub$JudgeName))
+#judges.sub<-subset(judges.sub,!is.na(JudgeSex))
+
+df<-judges.sub[!duplicated(judges.sub$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")
+
+# tutaj skonczyłem, dodać zliczanie w temp$typet po każdym el. z a i zrobienie boxplota
+judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex")) %>% arrange(judgmentID,JudgeSex) 
+temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typet=do.call(paste0, temp[c(2, 3)])) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn")))
+
+qplot(typestring,data=temp,geom="bar")+xlab("Typ składu sędziowskiego")+ylab("Liczba wystąpień")
 
 
+sizes<-unique(rowSums(temp[,-1]))
+t<-as.data.frame(t(combn(rep(c("F","M"),3),3,fun=sort))) %>% unique(.)
+a<-list()
+for(j in 1:length(sizes)){
+  for(i in 0:sizes[j]){a[[length(a)+1]]<-paste0(c(i,sizes[j]-i),collapse = "")}
+}
+a<-unlist(a)
 

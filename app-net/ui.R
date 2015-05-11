@@ -1,24 +1,33 @@
 shinyUI(fluidPage( 
-  titlePanel("Judging teams in Poland"),
+  titlePanel("Współzasiadanie w składach sędziowskich w Polsce"),
   sidebarLayout(
     sidebarPanel(
       uiOutput("select.court"),
-      helpText("
-               The application has been made to present the structure of judging teams in Polish courts. Judging teams are divided into specific courts which we can
-              choose from the list above."),
-      helpText("The 'Network' bookmark show the network od judges in chosen court. Each node means one judge. Link between two judges
-                means that they were sitting in the same judging team at least once. Every color of node in the background coresponds with different division/chamber
-                in the court. Node frame colour specifies sex of the judge."),
-      helpText("Divisions are grouped into one color if they deal with the cases in one type of law (e.g. Civil, Criminal etc.)."),
-      helpText("Stats bookmark shows several statistics of the specified network."),
-      helpText("Top chart shows top 10 judges in specified court who have top 10 number of judgments in they careers.")
+      helpText("Aplikacja ma na celu zaprezentowanie struktury składów orzekających w polskich sądach. Interesujący nas sąd możemy wybrać z list powyżej.
+              W prawej części aplikacji prezentowane są: sieć oraz Top chart sędziów  danym sądzie. Ponadto w zakładce Statystyki możemy zobaczyć podstawową analizę sieci.
+               "),
+      helpText("W zakładce 'Sieć współzasiadania' zobaczyć możemy sieć złożoną z sędziów orzekających w danym sądzie.
+               Każdy wierzchołek tej sieci reprezentuje jednego sędziego. Połączenie pomiędzy wierzchołkami oznacza, że dwóch konkretnych sędziów
+               zasiadało w tym samym składzie sędziowskim przynajmniej jeden raz. 
+               Każdy wierzchołek jest wypełniony kolorem (bądź kolorami) Każdt kolor odnosi się do wydziału/ izby w której dany sędzia orzekał.
+               Kolor obramowania wierzchołka opisuje płeć sędziego"),
+      helpText("Wydziały są zgrupowane w jeden jeżeli zajmują się tym samym typem spraw (np. Wydział I i II Karny jako Wydział Karny"),
+      helpText("Wykres typu 'Top chart' prezentuje dziesięciu sędziów orzekających w danym sądzie z największą liczbą orzeczeń")
     ),
     mainPanel( 
       tabsetPanel(
-        #tabPanel("Tests", textOutput("times"),textOutput("text1")),#,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
-        tabPanel("Stats",plotOutput("plot.multi")),
-        tabPanel("Network",imageOutput("pieImage")),
-        tabPanel("Top chart new",  imageOutput("topImage"))
+        tabPanel("Testy",dataTableOutput("table1")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
+        tabPanel("Sieć współzasiadania",imageOutput("pieImage")),
+        tabPanel("Top chart",  imageOutput("topImage")),
+        navbarMenu("Statystyki",
+                   #tabPanel("Multi",plotOutput("plot.multi")),
+                   tabPanel("Liczba orzeczeń w czasie",plotOutput("plot.judgments"),helpText("Opis wykresu...")),
+                   tabPanel("Liczba sędziów w czasie",plotOutput("plot.judges"),helpText("Opis wykresu...")),
+                   tabPanel("Typy składów orzekających",plotOutput("plot.team.types"),helpText("Opis wykresu...")),
+                   tabPanel("Wielkości składów orzekających",plotOutput("plot.team.size"),helpText("Opis wykresu...")),
+                   tabPanel("Rozkład k",plotOutput("plot.k"),helpText("Opis wykresu...")),
+                   tabPanel("Rozkład w",plotOutput("plot.w"),helpText("Opis wykresu..."))
+        )
       )
     )
   )
