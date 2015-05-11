@@ -15,6 +15,8 @@ judgments<-readRDS("data/judgments.rds")
 judges<-readRDS("data/judges.rds")
 divisions<-readRDS("data/divisions.rds")
 judges.net<-readRDS("data/judges.net.rds")
+Sys.setlocale("LC_ALL","pl_PL.UTF-8")
+mon<-data.frame(abr=paste(months(as.Date(paste("01-",1:12,"-1995",sep="")),T)," ",sep=""),pe=paste(months(as.Date(paste("01-",1:12,"-1995",sep="")),F)," ",sep=""))
 
 theme_set(theme_bw())
   
@@ -31,9 +33,6 @@ shinyServer(function(input, output, session) {
     names(list1)<-courts.un$CourtName
     selectInput("select.court",label=h3("Wybierz sąd:"),choices=list1)
   })
-  output$plottemp<-renderPlot({
-    plog.legend2(g.color.div(subgraph.simplified.court(),subgraph.mark.matrix(),court.divisions()))
-  },width=550,height=800)
   
   court.divisions<-reactive({
     subset(divisions,CourtCode==input$select.court)
@@ -146,13 +145,16 @@ shinyServer(function(input, output, session) {
   output$plot.k <- renderPlot({
     if(is.null(k.dist())){return(NULL)}  
     br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - liczba bezpośrednich połączeń z innymi sędziamy",title="Histogram zmiennej k")
+    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
+    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
+    
   })
   
   output$plot.w <- renderPlot({
     if(is.null(w.dist())){return(NULL)}
       br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-      ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",title="Histogram zmiennej w")
+      ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
   })
 #   
 #   plot.comp <- reactive({
@@ -163,11 +165,14 @@ shinyServer(function(input, output, session) {
   output$plot.judges <- renderPlot({
     if(nrow(judges.year())==0){return(NULL)}
     #ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()+labs(y="Number of judges",title="Graph showing number of judges in court in following years")+ylim(0,max(judges.year()$number.judges))
-    if(length(judges.year()$Data)<20){br<-judges.year()$Data[seq(1,length(judges.year()$Data),by=4)]} else {br<-judges.year()$Data[round(seq(1,length(judges.year()$Data),length.out=20),0)]}
-    ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +
-      geom_point(stat='summary', fun.y=sum) +
-      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=judges.year()$Data,breaks=br)+
-      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judges.year()$number.judges))
+    if(length(judges.year()$Data)<20){br<-judges.year()$Data[seq(1,length(judges.year()$Data),by=5)]} else {br<-judges.year()$Data[round(seq(1,length(judges.year()$Data),length.out=16),0)]}
+      br2<-as.vector(br)
+      for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
+    ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +  
+    geom_point(stat='summary', fun.y=sum) +
+      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=br2,breaks=br)+
+      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judges.year()$number.judges))+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
     
   })
 #   
@@ -177,24 +182,31 @@ shinyServer(function(input, output, session) {
 #   })
   
   output$plot.judgments <- renderPlot({
-    
     if(nrow(judgments.year())==0){return(NULL)}
-    if(length(judgments.year()$Data)<20){br<-judgments.year()$Data[seq(1,length(judgments.year()$Data),by=4)]} else {br<-judgments.year()$Data[round(seq(1,length(judgments.year()$Data),length.out=20),0)]}
+    if(length(judgments.year()$Data)<20){
+      br<-judgments.year()$Data[seq(1,length(judgments.year()$Data),by=5)]} else {br<-judgments.year()$Data[round(seq(1,length(judgments.year()$Data),length.out=16),0)]}
+    br2<-as.vector(br)
+    for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
     ggplot(judgments.year(), aes(x=Data, y=number.judgments, group=1)) +
       geom_point(stat='summary', fun.y=sum) +
-      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=judgments.year()$Data,breaks=br)+
-      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judgments.year()$number.judgments))
+      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=br2,breaks=br)+ #judgments.year()$Data
+      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judgments.year()$number.judgments))+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
   })
 
   output$plot.team.size<-renderPlot({
-    ggplot(team.size(),aes(x=liczba.s))+geom_histogram()+xlab("Liczba sędziów w składzie")+ylab("Liczba wystąpień")
+    ggplot(team.size(),aes(x=liczba.s))+geom_histogram()+
+    labs(x="Liczba sędziów w składzie",y="Liczba wystąpień",title="Wykres pokazujący wielkość składów sędziowskich")+ylim(0,max(judgments.year()$number.judgments))+
+    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
   })
   
   output$plot.team.types<-renderPlot({
     validate(
       need(nrow(team.types())!=0,"Trwa ładowanie danych...")
     )
-    qplot(typestring,data=team.types(),geom="bar")+xlab("Typ składu sędziowskiego")+ylab("Liczba wystąpień")
+    qplot(typestring,data=team.types(),geom="bar")+
+    labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
   })
 
   plot.sex<-reactive({
@@ -234,7 +246,7 @@ shinyServer(function(input, output, session) {
     )
     top<-judges.top.court()
     outfile <- tempfile(fileext='.svg')
-    g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Number of judgments",y="Judge Name",title="TopChart for judges is speciified court")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=18))+scale_shape()+scale_size_continuous(range = c(3,12))
+    g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Liczba orzeczeń",y="Sędzia",title="TopChart dla sędziów pod względem liczby orzeczeń w wybranym sądzie")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_shape()+scale_size_continuous(range = c(3,12))
     ggsave(filename=(outfile),g1,width = 1.5*160,height=1.5*120,units ="mm")
     filename <- normalizePath(file.path(outfile))
     list(src=filename,

@@ -1,5 +1,5 @@
 shinyUI(fluidPage( 
-  titlePanel("Współzasiadanie w składach sędziowskich w Polsce"),
+  titlePanel("Współzasiadanie w składach orzekających w Polsce"),
   sidebarLayout(
     sidebarPanel(
       uiOutput("select.court"),
@@ -11,7 +11,7 @@ shinyUI(fluidPage(
                zasiadało w tym samym składzie sędziowskim przynajmniej jeden raz. 
                Każdy wierzchołek jest wypełniony kolorem (bądź kolorami) Każdt kolor odnosi się do wydziału/ izby w której dany sędzia orzekał.
                Kolor obramowania wierzchołka opisuje płeć sędziego"),
-      helpText("Wydziały są zgrupowane w jeden jeżeli zajmują się tym samym typem spraw (np. Wydział I i II Karny jako Wydział Karny"),
+      helpText("Wydziały są zgrupowane w jeden jeżeli zajmują się tym samym typem spraw (np. Wydział I i II Karny jako Wydział Karny)"),
       helpText("Wykres typu 'Top chart' prezentuje dziesięciu sędziów orzekających w danym sądzie z największą liczbą orzeczeń")
     ),
     mainPanel( 

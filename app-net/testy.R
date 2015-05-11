@@ -271,7 +271,7 @@ fun1<-function(array,njudges,order,nnext){
 
 #error x not found
 
-c.code1<-max(courts$CourtCode[which(regexpr("Wroc",courts$CourtName)>0)])
+c.code1<-max(courts$CourtCode[which(regexpr("Najwyższy",courts$CourtName)>0)])
 courts[which(regexpr("Wroc",courts$CourtName)>0),]
 c.code1<-2
 judges.sub<-subset(judges,CourtCode==c.code1)
@@ -296,7 +296,23 @@ judges.sub<-subset(judges,CourtCode==c.code1)
 judges.sub<-subset(judges.sub,!is.na(judges.sub$JudgeName))
 #judges.sub<-subset(judges.sub,!is.na(JudgeSex))
 
+mon<-data.frame(abr=paste(months(as.Date(paste("01-",1:12,"-1995",sep="")),T)," ",sep=""),pe=paste(months(as.Date(paste("01-",1:12,"-1995",sep="")),F)," ",sep=""))
+dat<-as.data.frame(do.call(rbind,strsplit(lev,spli=" "))) %>% arrange(V2,)
+df<-judges.sub[!duplicated(judges.sub$judgmentID),] %>% mutate(Data=as.factor(paste(months(as.Date(judgmentDate)),judgmentYear,sep="\n"))) %>% plyr::count("Data")
+levels(df$Data)<-paste(rep(months(as.Date(paste("01-",1:12,"-1995",sep="")),F),(diff(range(judges.sub$judgmentYear))+1)),rep(seq(min(judges.sub$judgmentYear),max(judges.sub$judgmentYear)),each=12),sep="\n")
+levels(br)<-paste(rep(months(as.Date(paste("01-",1:12,"-1995",sep="")),F),(diff(range(judges.sub$judgmentYear))+1)),rep(seq(min(judges.sub$judgmentYear),max(judges.sub$judgmentYear)),each=12),sep="\n")
+
 df<-judges.sub[!duplicated(judges.sub$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")
+names(df)<-c("Data","number.judgments")
+if(length(df$Data)<20){br<-df$Data[seq(1,length(df$Data),by=5)]} else {br<-df$Data[round(seq(1,length(df$Data),length.out=16),0)]}
+br2<-as.vector(br)
+for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
+
+ggplot(df, aes(x=Data, y=number.judgments, group=1)) +
+  geom_point(stat='summary', fun.y=sum) +
+  stat_summary(fun.y=sum, geom="line")+ scale_x_discrete(labels=br2,breaks=br)+
+  labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(df$number.judgments))+
+  theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
 
 # tutaj skonczyłem, dodać zliczanie w temp$typet po każdym el. z a i zrobienie boxplota
 judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex")) %>% arrange(judgmentID,JudgeSex) 
