@@ -12,18 +12,24 @@ shinyUI(fluidPage(
                Każdy wierzchołek jest wypełniony kolorem (bądź kolorami) Każdt kolor odnosi się do wydziału/ izby w której dany sędzia orzekał.
                Kolor obramowania wierzchołka opisuje płeć sędziego"),
       helpText("Wydziały są zgrupowane w jeden jeżeli zajmują się tym samym typem spraw (np. Wydział I i II Karny jako Wydział Karny)"),
-      helpText("Wykres typu 'Top chart' prezentuje dziesięciu sędziów orzekających w danym sądzie z największą liczbą orzeczeń")
+      helpText("Wykres typu 'Top chart' prezentuje dziesięciu sędziów orzekających w danym sądzie z największą liczbą orzeczeń"),
+      br(),br(),
+      img(src = "icm_logo.png", height = 100*0.75, width = 156*0.75)
+      
     ),
     mainPanel( 
       tabsetPanel(
         tabPanel("Testy",dataTableOutput("table1")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
         tabPanel("Sieć współzasiadania",imageOutput("pieImage")),
-        tabPanel("Top chart",  imageOutput("topImage")),
+        tabPanel("Sędziowie",  imageOutput("topImage")),
         navbarMenu("Statystyki",
                    #tabPanel("Multi",plotOutput("plot.multi")),
                    tabPanel("Liczba orzeczeń w czasie",plotOutput("plot.judgments"),helpText("Opis wykresu...")),
-                   tabPanel("Liczba sędziów w czasie",plotOutput("plot.judges"),helpText("Opis wykresu...")),
-                   tabPanel("Typy składów orzekających",plotOutput("plot.team.types"),helpText("Opis wykresu...")),
+                   tabPanel("Liczba orzekających sędziów w czasie",plotOutput("plot.judges"),
+                            helpText("Wykres przedstawia liczbe sędziów, którzy byli członkami przynajmniej jednego składu orzekającego na wydanym orzeczeniu.")),
+                   tabPanel("Typy składów orzekających v.1",plotOutput("plot.team.types"),helpText("Opis wykresu...")),
+                   tabPanel("Typy składów orzekających v.2",plotOutput("plot.team.types2"),br(),br(),helpText("Opis wykresu...")),
+                   tabPanel("Typy składów orzekających v.3",plotOutput("plot.team.types3"),br(),br(),helpText("Opis wykresu...")),
                    tabPanel("Wielkości składów orzekających",plotOutput("plot.team.size"),helpText("Opis wykresu...")),
                    tabPanel("Rozkład k",plotOutput("plot.k"),helpText("Opis wykresu...")),
                    tabPanel("Rozkład w",plotOutput("plot.w"),helpText("Opis wykresu..."))

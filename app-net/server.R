@@ -131,8 +131,35 @@ shinyServer(function(input, output, session) {
       need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
     )
     judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
-    temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) ##%>% mutate(typet=do.call(paste0, temp[c(2, 3)]))
+    temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) %>% mutate(frac=F/(F+M)) 
   })
+
+  team.types2<-reactive({
+  validate(
+    need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+  )
+  judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
+  ttypes2<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(major=ifelse(F>M,"kobiety",ifelse(F==M,"brak przewagi","mężczyźni"))) %>% mutate(typer=paste(ifelse(F>M,F,M),ifelse(F>M,M,F),sep="/"))
+  ggplot(ttypes2, aes(x=typer, fill=major))+geom_bar(position="fill")
+  ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% filter(typer!="0/0") #%>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq))
+  temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq)) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
+  ctypes2<-merge(ctypes2,temp,by="typer") %>% mutate(freq.x=freq.x/freq.y)
+  names(ctypes2)[c(3,4)]<-c("freqmajor","typesum")
+  ctypes2<-ddply(ctypes2, .(typer), transform, ymax = cumsum(freqmajor)) %>% mutate(ymin=ymax-freqmajor)
+  ctypes2$xtext <- with(ctypes2, xmin + (xmax - xmin)/2)
+  ctypes2$ytext <- with(ctypes2, ymin + (ymax - ymin)/2)
+  ctypes2
+})
+
+team.types3<-reactive({
+  validate(
+    need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+  )
+  judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
+  ttypes3<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% plyr::count(.,c("F","M")) %>% filter(F!=0 | M!=0)
+})
+
+
 #   
 #   max.component<-reactive({    
 #     max.comp(subgraph.court())
@@ -171,7 +198,7 @@ shinyServer(function(input, output, session) {
     ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +  
     geom_point(stat='summary', fun.y=sum) +
       stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=br2,breaks=br)+
-      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judges.year()$number.judges))+
+      labs(y="Liczba orzekających sędziów",title="Liczba orzekających sędziów")+ylim(0,max(judges.year()$number.judges))+ # Wykres pokazujący liczbę sędziów orzekających w wybranym sądzie w danym miesiącu
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
     
   })
@@ -190,7 +217,7 @@ shinyServer(function(input, output, session) {
     ggplot(judgments.year(), aes(x=Data, y=number.judgments, group=1)) +
       geom_point(stat='summary', fun.y=sum) +
       stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=br2,breaks=br)+ #judgments.year()$Data
-      labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(judgments.year()$number.judgments))+
+      labs(y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+ylim(0,max(judgments.year()$number.judgments))+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
   })
 
@@ -204,9 +231,39 @@ shinyServer(function(input, output, session) {
     validate(
       need(nrow(team.types())!=0,"Trwa ładowanie danych...")
     )
-    qplot(typestring,data=team.types(),geom="bar")+
+    qplot(typestring,data=team.types(),geom="bar",fill=frac)+
     labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
-    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
+    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+      scale_fill_continuous()
+  })
+
+  output$plot.team.types2<-renderPlot({
+    validate(
+      need(nrow(team.types2())!=0,"Trwa ładowanie danych...")
+    )
+    ggplot(team.types2(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
+      geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
+      geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
+      annotate("text",label="Typ składu: ",x=0,y=1.03,size=5)+
+      annotate("text",x=labels$xmean,y=-0.03,label=labels$typesum,size=5)+
+      annotate("text",label="Liczba orzeczeń: ",x=0.05,y=-0.03,size=5)+
+      ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+      theme(axis.line=element_blank(),axis.text.x=element_blank(),
+            axis.text.y=element_blank(),axis.ticks=element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),legend.position="bottom",
+            panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+            panel.grid.minor=element_blank(),plot.background=element_blank())
+  },width = 1100, height = 800, res = 72)
+
+  output$plot.team.types3<-renderPlot({
+    validate(
+      need(nrow(team.types3())!=0,"Trwa ładowanie danych...")
+    )
+    ggplot(team.types3(),aes(x=M,y=F))+geom_point(aes(size=freq,colour=F/(F+M)))+scale_size_continuous(range = c(10,30))+scale_shape()+
+      scale_color_continuous(low="lightblue4",high="blue4")+
+      theme(legend.position="none")+
+      geom_text(aes(x=M,y=F,label=freq),size=4,color="white") #fill=(M/(F+M))
   })
 
   plot.sex<-reactive({
@@ -246,7 +303,7 @@ shinyServer(function(input, output, session) {
     )
     top<-judges.top.court()
     outfile <- tempfile(fileext='.svg')
-    g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Liczba orzeczeń",y="Sędzia",title="TopChart dla sędziów pod względem liczby orzeczeń w wybranym sądzie")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_shape()+scale_size_continuous(range = c(3,12))
+    g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Łączna liczba orzeczeń",y="Sędzia",title="10 sędziów orzekających w największej liczbie spraw")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_shape()+scale_size_continuous(range = c(3,12))
     ggsave(filename=(outfile),g1,width = 1.5*160,height=1.5*120,units ="mm")
     filename <- normalizePath(file.path(outfile))
     list(src=filename,
