@@ -196,7 +196,7 @@ shinyServer(function(input, output, session) {
 
   output$plot.team.size<-renderPlot({
     ggplot(team.size(),aes(x=liczba.s))+geom_histogram()+
-    labs(x="Liczba sędziów w składzie",y="Liczba wystąpień",title="Wykres pokazujący wielkość składów sędziowskich")+ylim(0,max(judgments.year()$number.judgments))+
+    labs(x="Liczba sędziów w składzie",y="Liczba wystąpień",title="Wykres pokazujący wielkość składów sędziowskich")+
     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
   })
   

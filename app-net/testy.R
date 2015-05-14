@@ -271,7 +271,7 @@ fun1<-function(array,njudges,order,nnext){
 
 #error x not found
 
-c.code1<-max(courts$CourtCode[which(regexpr("Najwyższy",courts$CourtName)>0)])
+c.code1<-max(courts$CourtCode[which(regexpr("Najwy",courts$CourtName)>0)])
 courts[which(regexpr("Wroc",courts$CourtName)>0),]
 c.code1<-2
 judges.sub<-subset(judges,CourtCode==c.code1)
@@ -313,14 +313,9 @@ ggplot(df, aes(x=Data, y=number.judgments, group=1)) +
   stat_summary(fun.y=sum, geom="line")+ scale_x_discrete(labels=br2,breaks=br)+
   labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(df$number.judgments))+
   theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
-
 # tutaj skonczyłem, dodać zliczanie w temp$typet po każdym el. z a i zrobienie boxplota
 judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex")) %>% arrange(judgmentID,JudgeSex) 
 temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typet=do.call(paste0, temp[c(2, 3)])) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn")))
-
-qplot(typestring,data=temp,geom="bar")+xlab("Typ składu sędziowskiego")+ylab("Liczba wystąpień")
-
-
 sizes<-unique(rowSums(temp[,-1]))
 t<-as.data.frame(t(combn(rep(c("F","M"),3),3,fun=sort))) %>% unique(.)
 a<-list()
@@ -329,3 +324,11 @@ for(j in 1:length(sizes)){
 }
 a<-unlist(a)
 
+
+tsize<-subset(judges,CourtCode==c.code1) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
+plyr::count(tsize[,-2],"liczba.s")
+subset(judges,judgmentID %in% tsize$judgmentID[which(tsize$liczba.s %in% seq(12,17))])
+
+qplot(typestring,data=team.types(),geom="bar")+
+  labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+  theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
