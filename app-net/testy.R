@@ -271,7 +271,7 @@ fun1<-function(array,njudges,order,nnext){
 
 #error x not found
 
-c.code1<-max(courts$CourtCode[which(regexpr("Kraj",courts$CourtName)>0)])
+c.code1<-max(courts$CourtCode[which(regexpr("Najw",courts$CourtName)>0)])
 courts[which(regexpr("Wroc",courts$CourtName)>0),]
 c.code1<-2
 judges.sub<-subset(judges,CourtCode==c.code1)
@@ -288,54 +288,8 @@ m.list<-g.mark.list(g.sim,m.matrix)
 list<-g.color.div(g.sim,m.matrix,divs)
 layg<-layout.fruchterman.reingold(g.sim,weights=E(g.sim)$weight,area=10000*vcount(g.sim)^2,repulserad=50000*vcount(g.sim)^3)
 
-judgm.count<-plyr::count(judges.sub,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
-ggplot(judgm.count,aes(x=liczba.s))+geom_histogram()+xlab("Liczba sędziów w składzie")+ylab("Liczba wystąpień")
-mon<-data.frame(abr=paste(months(as.Date(paste("01-",1:12,"-1995",sep="")),T)," ",sep=""),pe=paste(months(as.Date(paste("01-",1:12,"-1995",sep="")),F)," ",sep=""))
-dat<-as.data.frame(do.call(rbind,strsplit(lev,spli=" "))) %>% arrange(V2,)
-df<-judges.sub[!duplicated(judges.sub$judgmentID),] %>% mutate(Data=as.factor(paste(months(as.Date(judgmentDate)),judgmentYear,sep="\n"))) %>% plyr::count("Data")
-levels(df$Data)<-paste(rep(months(as.Date(paste("01-",1:12,"-1995",sep="")),F),(diff(range(judges.sub$judgmentYear))+1)),rep(seq(min(judges.sub$judgmentYear),max(judges.sub$judgmentYear)),each=12),sep="\n")
-levels(br)<-paste(rep(months(as.Date(paste("01-",1:12,"-1995",sep="")),F),(diff(range(judges.sub$judgmentYear))+1)),rep(seq(min(judges.sub$judgmentYear),max(judges.sub$judgmentYear)),each=12),sep="\n")
-
-df<-judges.sub[!duplicated(judges.sub$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")
-names(df)<-c("Data","number.judgments")
-if(length(df$Data)<20){br<-df$Data[seq(1,length(df$Data),by=5)]} else {br<-df$Data[round(seq(1,length(df$Data),length.out=16),0)]}
-br2<-as.vector(br)
-for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
-
-ggplot(df, aes(x=Data, y=number.judgments, group=1)) +
-  geom_point(stat='summary', fun.y=sum) +
-  stat_summary(fun.y=sum, geom="line")+ scale_x_discrete(labels=br2,breaks=br)+
-  labs(y="Liczba orzeczeń w czasie",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w kolejnych miesiącach")+ylim(0,max(df$number.judgments))+
-  theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
-# tutaj skonczyłem, dodać zliczanie w temp$typet po każdym el. z a i zrobienie boxplota
-judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex")) %>% arrange(judgmentID,JudgeSex) 
-temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typet=do.call(paste0, temp[c(2, 3)])) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn")))
-sizes<-unique(rowSums(temp[,-1]))
-t<-as.data.frame(t(combn(rep(c("F","M"),3),3,fun=sort))) %>% unique(.)
-a<-list()
-for(j in 1:length(sizes)){
-  for(i in 0:sizes[j]){a[[length(a)+1]]<-paste0(c(i,sizes[j]-i),collapse = "")}
-}
-a<-unlist(a)
-
-
-tsize<-subset(judges,CourtCode==c.code1) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
-plyr::count(tsize[,-2],"liczba.s")
-subset(judges,judgmentID %in% tsize$judgmentID[which(tsize$liczba.s %in% seq(12,17))])
-
 judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex"))
-ttypes<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) %>% mutate(frac=F/(F+M))
-ctypes<-plyr::count(ttypes,c("frac","typestring","F","M")) %>% arrange((freq))
-sqldf("select f.F,f.M,f.freq as f_freq,m.freq as m_freq from ctypes f left join ctypes m
-      on f.F=m.M and f.M=m.F")
-qplot(typestring,data=ttypes,geom="bar",fill=frac)+
-  labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
-  theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
-  scale_fill_continuous() # low="blue",high="red") #limits=c(3, 4),
-
-#wykres v.2
 ttypes2<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(major=ifelse(F>M,"kobiety",ifelse(F==M,"brak przewagi","mężczyźni"))) %>% mutate(typer=paste(ifelse(F>M,F,M),ifelse(F>M,M,F),sep="/"))
-ggplot(ttypes2, aes(x=typer, fill=major))+geom_bar(position="fill")
 ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% filter(typer!="0/0") #%>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq))
 temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq)) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
 ctypes2<-merge(ctypes2,temp,by="typer") %>% mutate(freq.x=freq.x/freq.y)
@@ -343,12 +297,15 @@ names(ctypes2)[c(3,4)]<-c("freqmajor","typesum")
 ctypes2<-ddply(ctypes2, .(typer), transform, ymax = cumsum(freqmajor)) %>% mutate(ymin=ymax-freqmajor)
 ctypes2$xtext <- with(ctypes2, xmin + (xmax - xmin)/2)
 ctypes2$ytext <- with(ctypes2, ymin + (ymax - ymin)/2)
-labels<-ctypes2 %>% mutate(xmean=xmin+(xmax-xmin)/2) %>% distinct(xmean)
+ctypes2
+
+labels<-data.frame(xmean=ctypes2$xmin+(ctypes2$xmax-ctypes2$xmin)/2,text=ctypes2$typesum)
+
 ggplot(ctypes2, aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
   geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
   geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
   annotate("text",label="Typ składu: ",x=0,y=1.03,size=5)+
-  annotate("text",x=labels$xmean,y=-0.03,label=labels$typesum,size=5)+
+  annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=5)+
   annotate("text",label="Liczba orzeczeń: ",x=0.05,y=-0.03,size=5)+
   ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
   theme(axis.line=element_blank(),axis.text.x=element_blank(),
@@ -358,10 +315,39 @@ ggplot(ctypes2, aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = m
         panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
         panel.grid.minor=element_blank(),plot.background=element_blank())
 
-#team.type v.3
-ttypes3<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% plyr::count(.,c("F","M")) %>% filter(F!=0 | M!=0)
-ggplot(ttypes3,aes(x=M,y=F))+geom_point(aes(size=freq,colour=F/(F+M)))+scale_size_continuous(range = c(10,30))+scale_shape()+
-  scale_color_continuous(low="lightblue4",high="blue4")+
-  theme(legend.position="none")+
-  geom_text(aes(x=M,y=F,label=freq),size=4,color="white") #fill=(M/(F+M))
-  
+# liczba sędziów w czasie, popr. osi x (wszystkie miesiące z przedziału)
+
+subset.judges.c<-judges.sub
+df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")
+dd<-as.Date(floor(as.yearmon(range(subset.judges.c$judgmentDate)))+ c(0,11/12))
+smon<-data.frame(Data=as.factor(as.yearmon(seq(dd[1],dd[2],by="month"))))
+df<-join(smon,df,"Data")
+levels(df$Data)<-smon$Data
+names(df)<-c("Data","number.judgments")
+df$seqence<-seq(1,nrow(df),by=1)
+df
+
+judgments.year2<-judgm.year2(judges.sub)
+siz<-c(1,2,3,4,6,12,24)
+bylab<-siz[which(length(judgments.year2$Data)/44 < siz)[1]]
+br1<-judgments.year2$sequence[seq(1,length(judgments.year2$Data),by=bylab)]
+yearlabel<-seq(as.numeric(strsplit(as.character(judgments.year2$Data[1])," ")[[1]][2]),as.numeric(strsplit(as.character(judgments.year2$Data[length(judgments.year2$Data)])," ")[[1]][2]))
+xlab<-seq(1,length(judgments.year2$Data),12)
+br2<-rep(mon$abr[seq(1,12,by=bylab)],length(yearlabel))
+
+plabels<-data.frame(x=xlab,year=yearlabel,y=1.05*(max(judgments.year2$number.judgments,na.rm=T)))
+
+#ggplot(judgments.year2[!is.na(judgments.year2$number.judgments),], aes(x=sequence, y=number.judgments, group=1)) +
+ggplot(judgments.year2, aes(x=sequence, y=number.judgments, group=1)) +
+  #geom_point(stat='summary', fun.y=sum) +
+  #stat_summary(fun.y=sum, geom="line")+
+  geom_line()+
+  geom_point()+
+  #scale_x_continuous(labels=br2,breaks=br1)+
+  scale_x_discrete(labels=br2,breaks=br1)+
+  labs(y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+
+  ylim(0,max(judgments.year2$number.judgments)*1.1)+
+  #xlim(range(judgments.year2$sequence))+
+  theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+  geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
+  geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
