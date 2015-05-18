@@ -120,32 +120,16 @@ list1
 }
 
 judgm.year<-function(subset.judges.c){
-  #df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")
-  #df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=format(as.Date(judgmentDate),format = "%B\n%Y")) %>% plyr::count("Data")
-  #df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=as.factor(paste(months(as.Date(judgmentDate)),judgmentYear,sep="\n"))) %>% plyr::count("Data")
   df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")  
   dd<-as.Date(floor(as.yearmon(range(subset.judges.c$judgmentDate)))+ c(0,11/12))
   smon<-data.frame(Data=as.factor(as.yearmon(seq(dd[1],dd[2],by="month"))))
   df<-join(smon,df,"Data")
   levels(df$Data)<-smon$Data  
   names(df)<-c("Data","number.judgments")
-  #df$number.judgments[is.na(df$number.judgments)]<-0
-  df
-}
-
-judgm.year2<-function(subset.judges.c){
-  df<-subset.judges.c[!duplicated(subset.judges.c$judgmentID),] %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count("Data")  
-  dd<-as.Date(floor(as.yearmon(range(subset.judges.c$judgmentDate)))+ c(0,11/12))
-  smon<-data.frame(Data=as.factor(as.yearmon(seq(dd[1],dd[2],by="month"))))
-  df<-join(smon,df,"Data")
-  levels(df$Data)<-smon$Data  
-  names(df)<-c("Data","number.judgments")
-  df$sequence<-seq(1,nrow(df),by=1)
   df
 }
 
 j.year<-function(subset.judges.c){
-  #temp<-subset.judges.c %>% mutate(Data=as.factor(paste(months(as.Date(judgmentDate)),judgmentYear,sep="\n"))) %>% plyr::count(c("JudgeName","Data"))
   temp<-subset.judges.c %>% mutate(Data=as.factor(as.yearmon(judgmentDate))) %>% plyr::count(c("JudgeName","Data"))
   names(temp)[3]<-"dd"
   df<-plyr::count(temp,"Data")
@@ -154,7 +138,7 @@ j.year<-function(subset.judges.c){
   df<-join(smon,df,"Data")
   levels(df$Data)<-smon$Data
   names(df)<-c("Data","number.judges")
-  df$number.judges[is.na(df$number.judges)]<-0
+  #df$number.judges[is.na(df$number.judges)]<-0
   df
 }
 

@@ -198,43 +198,28 @@ team.types3<-reactive({
   
   output$plot.judges <- renderPlot({
     if(nrow(judges.year())==0){return(NULL)}
-    #ggplot(judges.year(),aes(x=year,y=number.judges))+geom_line()+labs(y="Number of judges",title="Graph showing number of judges in court in following years")+ylim(0,max(judges.year()$number.judges))
-    #if(length(judges.year()$Data)<20){
     siz<-c(1,2,3,4,6,12,24)
-    bylab<-siz[which(length(judges.year()$Data)/24 < siz)[1]]
-      br<-judges.year()$Data[seq(1,length(judges.year()$Data),by=bylab)]
-    #} else {br<-judges.year()$Data[round(seq(1,length(judges.year()$Data),length.out=16),0)]}
-      br2<-as.vector(br)
-      for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
+    bylab<-siz[which(length(judges.year()$Data)/44 < siz)[1]]
+    br1<-judges.year()$Data[seq(1,length(judges.year()$Data),by=bylab)]
+    yearlabel<-seq(as.numeric(strsplit(as.character(judges.year()$Data[1])," ")[[1]][2]),as.numeric(strsplit(as.character(judges.year()$Data[length(judges.year()$Data)])," ")[[1]][2]))
+    xlab<-seq(1,length(judges.year()$Data),12)
+    br2<-rep(mon$abr[seq(1,12,by=bylab)],length(yearlabel))
+      #br2<-as.vector(br)
+    #  for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
+    plabels<-data.frame(x=xlab,year=yearlabel,y=1.05*(max(judges.year()$number.judges,na.rm=T)))
+    
     ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +  
     geom_point(stat='summary', fun.y=sum) +
-      stat_summary(fun.y=sum, geom="line")+scale_x_discrete(labels=br2,breaks=br)+
-      labs(y="Liczba orzekających sędziów",title="Liczba orzekających sędziów")+ylim(0,max(judges.year()$number.judges))+ # Wykres pokazujący liczbę sędziów orzekających w wybranym sądzie w danym miesiącu
-      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
+    stat_summary(fun.y=sum, geom="line")+
+      scale_x_discrete(labels=br2,breaks=br1)+
+      labs(y="Liczba orzekających sędziów",title="Liczba orzekających sędziów")+
+      ylim(0,max(judges.year()$number.judges)*1.1)+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+      geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
+      geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
   })
-#   
-#   plot.coop<- reactive({
-#      if(is.null(judges.coop.year())) {return(NULL)}
-#       ggplot(judges.coop.year(),aes(x=year,y=coop))+geom_line()+labs(y="Diversity of judging teams [%]",title="Graph showing diversity of judging teams in following years")+ylim(0,1)
-#   })
   
-  output$plot.judgments <- renderPlot({
-    if(nrow(judgments.year())==0){return(NULL)}
-    siz<-c(1,2,3,4,6,12,24)
-    bylab<-siz[which(length(judgments.year()$Data)/24 < siz)[1]]
-      br<-judgments.year()$Data[seq(1,length(judgments.year()$Data),by=bylab)]
-
-    br2<-as.vector(br)
-    for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
-    ggplot(judgments.year(), aes(x=Data, y=number.judgments, group=1)) +
-      geom_point(stat='summary', fun.y=sum) +
-      stat_summary(fun.y=sum, geom="line")+
-      scale_x_discrete(labels=br2,breaks=br)+ #judgments.year()$Data
-      labs(y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+ylim(0,max(judgments.year()$number.judgments))+
-      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
-  })
-
-  output$plot.judgments2<- renderPlot({
+  output$plot.judgments<- renderPlot({
     if(nrow(judgments.year())==0){return(NULL)}
     siz<-c(1,2,3,4,6,12,24)
     bylab<-siz[which(length(judgments.year()$Data)/44 < siz)[1]]
@@ -244,34 +229,12 @@ team.types3<-reactive({
     br2<-rep(mon$abr[seq(1,12,by=bylab)],length(yearlabel))
     
     plabels<-data.frame(x=xlab,year=yearlabel,y=1.05*(max(judgments.year()$number.judgments,na.rm=T)))
-    print(judgments.year())
     ggplot(judgments.year(), aes(x=Data, y=number.judgments, group=1)) +
       geom_point(stat='summary', fun.y=sum) +
       stat_summary(fun.y=sum, geom="line")+
       scale_x_discrete(labels=br2,breaks=br1)+
       labs(y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+
       ylim(0,max(judgments.year()$number.judgments)*1.1)+
-      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
-      geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
-      geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
-  })
-
-  output$plot.judgments3<- renderPlot({
-    if(nrow(judgments.year2())==0){return(NULL)}
-    siz<-c(1,2,3,4,6,12,24)
-    bylab<-siz[which(length(judgments.year2()$Data)/44 < siz)[1]]
-    br1<-judgments.year2()$sequence[seq(1,length(judgments.year2()$Data),by=bylab)]
-    yearlabel<-seq(as.numeric(strsplit(as.character(judgments.year2()$Data[1])," ")[[1]][2]),as.numeric(strsplit(as.character(judgments.year2()$Data[length(judgments.year2()$Data)])," ")[[1]][2]))
-    xlab<-seq(1,length(judgments.year2()$Data),12)
-    br2<-rep(mon$abr[seq(1,12,by=bylab)],length(yearlabel))
-    plabels<-data.frame(x=xlab,year=yearlabel,y=1.05*(max(judgments.year2()$number.judgments,na.rm=T)))
-    
-    ggplot(judgments.year2(), aes(x=sequence, y=number.judgments, group=1)) +
-      geom_line()+
-      geom_point()+
-      scale_x_discrete(labels=br2,breaks=br1)+
-      labs(y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+
-      ylim(0,max(judgments.year2()$number.judgments)*1.1)+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
       geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)

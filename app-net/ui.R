@@ -23,13 +23,10 @@ shinyUI(fluidPage(
         tabPanel("Sieć współzasiadania",imageOutput("pieImage")),
         tabPanel("Sędziowie",  imageOutput("topImage")),
         navbarMenu("Statystyki",
-                   #tabPanel("Multi",plotOutput("plot.multi")),
                    tabPanel("Liczba orzeczeń w czasie",plotOutput("plot.judgments"),
                             helpText("Na wykresie możemy porównać liczbę orzeczeń wydawanych w kolejnych miesiącach w wybranym przez nas sądzie.
                                      Należy wziąć pod uwagę, że wykres pokazuje tylko orzeczenia które są dostępne przez API, co może wpływać na 
                                      kształt wykresu")),
-                   tabPanel("Liczba orzeczeń w czasie v2",plotOutput("plot.judgments2")),
-                   tabPanel("Liczba orzeczeń w czasie v3",plotOutput("plot.judgments3")),
                    tabPanel("Liczba orzekających sędziów w czasie",plotOutput("plot.judges"),
                             helpText("Wykres przedstawia liczbe sędziów, którzy byli członkami przynajmniej jednego składu orzekającego na wydanym 
                                       orzeczeniu w kolejnych miesiącach. Należy wziąć pod uwagę, że wykres pokazuje tylko orzeczenia które są 
