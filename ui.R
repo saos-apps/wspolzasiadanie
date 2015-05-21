@@ -12,9 +12,10 @@ shinyUI(fluidPage(
     ),
     mainPanel( 
       tabsetPanel(
-        tabPanel("Testy",dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3"),dataTableOutput("table4")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
+        tabPanel("Testy",textOutput("text1"),dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3"),dataTableOutput("table4")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
         tabPanel("Sieć współzasiadania",imageOutput("pieImage"),
-                 br(),br(),br(),br(),br(),br(),br(),br(),br(),br(), br(),br(),br(),br(),br(),br(),br(),
+                 htmlOutput("netbreaks"),
+                 #br(),br(),br(),br(),br(),br(),br(),br(),br(),br(), br(),br(),br(),br(),br(),br(),br(),br(),br(),
                  helpText("Powyższy rysunek przedstawia sieć złożoną z sędziów orzekających w wybranym sądzie.
                Każdy wierzchołek tej sieci reprezentuje jednego sędziego. Połączenie pomiędzy wierzchołkami oznacza, że dwóch konkretnych sędziów
                zasiadało w tym samym składzie orzekających przynajmniej jeden raz. 
@@ -24,43 +25,50 @@ shinyUI(fluidPage(
                           Wydział Karny)")
                  ),
         tabPanel("Sędziowie",  imageOutput("topImage"),
-                 br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                 htmlOutput("topbreaks"),
+                 #br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                  helpText("Wykres prezentuje dziesięciu sędziów orzekających w danym sądzie w największej liczbie spraw. Na osi poziomej
                           odłożona została liczba spraw, w których dany sędzia orzekał.")
                  ),
         navbarMenu("Statystyki",
                    tabPanel("Liczba orzeczeń w czasie",plotOutput("plot.judgments"),
-                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                            #br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Na wykresie możemy porównać liczbę orzeczeń wydawanych w kolejnych miesiącach w wybranym przez nas sądzie.
                                      Należy wziąć pod uwagę, że wykres pokazuje tylko orzeczenia które są dostępne przez API, co może wpływać na 
                                      kształt wykresu")),
                    tabPanel("Liczba orzekających sędziów w czasie",plotOutput("plot.judges"),
-                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                            #br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Wykres przedstawia liczbe sędziów, którzy byli członkami przynajmniej jednego składu orzekającego na wydanym 
                                       orzeczeniu w kolejnych miesiącach. Należy wziąć pod uwagę, że wykres pokazuje tylko orzeczenia które są 
                                       dostępne przez API, co może wpływać na kształt wykresu")),
-                   tabPanel("Typy składów orzekających v.1",plotOutput("plot.team.types"),helpText("Opis wykresu...")),
-                   tabPanel("Typy składów orzekających v.2",plotOutput("plot.team.types2"),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                   tabPanel("Typy składów orzekających (wykres słupkowy)",plotOutput("plot.team.types"),helpText("Opis wykresu...")),
+#                    tabPanel("Typy składów orzekających (wykres mozaikowy)",plotOutput("plot.team.types2"),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+#                             helpText("Wykres przedstawia typy składów orzekających z uwzględnieniem proporcji kobiet do mężczyzn.
+#                                      Typ składu oznacza skład pod względem kombinacji `liczba kobiet/liczba mężczyzn`.
+#                                      Kolory i odpowiadające im wysokości słupków oznaczają ile procentowo było składów o danej kombinacji z przewagą kobiet,
+#                                      a ile z przewagą mężczyzn. Szerokość kolejnych słupków odpowiada ilości orzeczeń wydanych przez odpowiednie
+#                                      składy sędziowskie. Kolor zielony oznacza składy z przewagą kobiet, niebieski składy z przewagą mężczyzn,
+#                                      czerwony natomiast składy gdzie nie było przewagi (składy typu 1/1)")),
+                   tabPanel("Typy składów orzekających (wykres mozaikowy)",plotOutput("plot.team.types2b"),
                             helpText("Wykres przedstawia typy składów orzekających z uwzględnieniem proporcji kobiet do mężczyzn.
                                      Typ składu oznacza skład pod względem kombinacji `liczba kobiet/liczba mężczyzn`.
                                      Kolory i odpowiadające im wysokości słupków oznaczają ile procentowo było składów o danej kombinacji z przewagą kobiet,
                                      a ile z przewagą mężczyzn. Szerokość kolejnych słupków odpowiada ilości orzeczeń wydanych przez odpowiednie
-                                     składy sędziowskie. Kolor zielony oznacza składy z przewagą kobiet, niebieski składy z przewagą mężczyzn,
-                                     czerwony natomiast składy gdzie nie było przewagi (składy typu 1/1)")),
-                   tabPanel("Typy składów orzekających v.2b",plotOutput("plot.team.types2b")),
-                   tabPanel("Typy składów orzekających v.3",plotOutput("plot.team.types3"),br(),br(),helpText("Opis wykresu...")),
+                                     składy sędziowskie. Kolor czerwony oznacza składy z przewagą kobiet, niebieski składy z przewagą mężczyzn,
+                                     szary natomiast składy gdzie nie było przewagi (składy typu 1/1)")),
+                   tabPanel("Typy składów orzekających (wykres bąbelkowy)",plotOutput("plot.team.types3"),helpText("Opis wykresu...")),
                    tabPanel("Wielkości składów orzekających",plotOutput("plot.team.size"),
-                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                            #br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Na wykresie możemy zobaczyć ile było składów o danej wielkości (pod względem liczby orzekających sędziów)
                                      w danym sądzie. Wysokość słupka odpowiada liczbie składów orzekających o danej wielkości.")),
                    tabPanel("Rozkład k",plotOutput("plot.k"),
-                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                           # br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Wykres pokazuje stopnie wierzchołków w sieci współzasiadania sędziów. Stopień wierzchołka odpowiada liczbie
                                      bezpośrednich połączeń danego sędziego z innymi sędziami w danym sądzie. Bezpośrednie połączenie występuje
                                      w przypadku, kiedy dwóch sędziów wydało razem przynajmniej jedno orzeczenie.
                                      Wysokości słupków oznaczają liczbę sędziów o danej liczbie bezpośrednich sąsiadów.")),
                    tabPanel("Rozkład w",plotOutput("plot.w"),
-                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                            #br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Wykres przedstawia wagi krawędz w sieci współzasiadania sędziów. Krawędź jest to linia łącząca wierzchołki 
                                      czyli dwóch sędziów. Sędziowie połączeni są krawędzią w przypadku, kiedy wydali razem przynajmniej jedno 
                                      orzeczenie. Waga krawędzi to liczba orzeczeń, przy których wydawaniu uczestniczyło razem dwóch sędziów

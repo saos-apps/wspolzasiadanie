@@ -209,7 +209,7 @@ team.types3<-reactive({
       labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
   
   output$plot.w <- renderPlot({
     #if(is.null(w.dist())){return(NULL)}
@@ -225,7 +225,7 @@ team.types3<-reactive({
     ggplot(w.dist(),aes(x=w))+geom_histogram(aes(fill=..count..),breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
 #   
 #   plot.comp <- reactive({
 #       if(is.null(max.component())){return(NULL)}
@@ -251,12 +251,12 @@ team.types3<-reactive({
     geom_point(stat='summary', fun.y=sum) +
     stat_summary(fun.y=sum, geom="line")+
       scale_x_discrete(labels=br2,breaks=br1)+
-      labs(y="Liczba orzekających sędziów",title="Liczba orzekających sędziów")+
+      labs(x="miesiąc",y="Liczba orzekających sędziów",title="Liczba orzekających sędziów")+
       ylim(0,max(judges.year()$number.judges)*1.1)+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
       geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
   
   output$plot.judgments<- renderPlot({
     #if(nrow(judgments.year())==0){return(NULL)}
@@ -275,12 +275,12 @@ team.types3<-reactive({
       geom_point(stat='summary', fun.y=sum) +
       stat_summary(fun.y=sum, geom="line")+
       scale_x_discrete(labels=br2,breaks=br1)+
-      labs(y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+
+      labs(x="miesiąc",y="Liczba orzeczeń",title="Wykres pokazujący liczbę orzeczeń w wybranym sądzie w danym miesiącu")+
       ylim(0,max(judgments.year()$number.judgments)*1.1)+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
       geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
 
   output$plot.team.size<-renderPlot({
     validate(
@@ -292,10 +292,11 @@ team.types3<-reactive({
 #     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
     ggplot(team.size(), aes(x=liczba.s, y=count, width=0.5)) + 
       geom_bar(aes(fill=count), stat="identity", position="identity")+
+            labs(x="Liczba sędziów orzekających",y="Liczba orzeczeń")+
             geom_text(aes(x=liczba.s,y=count+max(count)/30,label=count),size=5)+
             scale_y_continuous(breaks=pretty_breaks(10))+
             theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
   
   output$plot.team.types<-renderPlot({
     validate(
@@ -305,7 +306,7 @@ team.types3<-reactive({
     labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_fill_continuous()
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
 
   output$plot.team.types2<-renderPlot({
     validate(
@@ -325,27 +326,28 @@ team.types3<-reactive({
             axis.title.y=element_blank(),legend.position="bottom",
             panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),plot.background=element_blank())
-  },width=1000,height=600)
+  }) #,width=1000,height=600
   
   output$plot.team.types2b<-renderPlot({
     validate(
       need(nrow(team.types2b())>1,"Brak danych...")
     )
     labels<-data.frame(xmean=team.types2b()$xmin+(team.types2b()$xmax-team.types2b()$xmin)/2,text=team.types2b()$typesum)
-    ggplot(team.types2b(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
-      geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
-      geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
-      annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=5)+
-      annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=5)+
-      annotate("text",label="Liczba orzeczeń: ",x=(min(labels$xmean*0.1)),y=-0.03,size=5)+
+    ggplot(team.types2b(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"),aes(fill=major))+
+      geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4)+
+      geom_text(aes(x = xtext, y = 1.03, label = typer), size = 4)+
+      annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=4)+
+      annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=4)+
+      annotate("text",label="Liczba orzeczeń: ",x=(min(labels$xmean*0.15)),y=-0.03,size=4)+
       ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+      scale_fill_manual(name="",values=c("kobiety"="indianred3","mężczyźni"="royalblue3","brak przewagi"="grey45"))+
       theme(axis.line=element_blank(),axis.text.x=element_blank(),
             axis.text.y=element_blank(),axis.ticks=element_blank(),
             axis.title.x=element_blank(),
             axis.title.y=element_blank(),legend.position="bottom",
             panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),plot.background=element_blank())
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
 
   output$plot.team.types3<-renderPlot({
     validate(
@@ -355,14 +357,21 @@ team.types3<-reactive({
       scale_color_continuous(low="lightblue4",high="blue4")+
       theme(legend.position="none")+
       geom_text(aes(x=M,y=F,label=freq),size=4,color="white") #fill=(M/(F+M))
-  },width=1000,height=600)
+  }) #,width=1000,height=600)
 
   plot.sex<-reactive({
     if(nrow(subset.judges.clean())==0){return(NULL)}
     plot.sex.distribution(subset.judges.clean())
   })
   
-#   output$text1<-renderText({subgraph.summary()})
+  output$topbreaks <- renderUI({
+    HTML(rep("<br/>",round((session$clientData$output_topImage_width-550)/30)))
+  })
+
+  output$netbreaks <- renderUI({
+    HTML(rep("<br/>",round((session$clientData$output_pieImage_width-500)/30)))
+  })
+   output$text1<-renderText({c(session$clientData$output_pieImage_width,"   ",session$clientData$output_topImage_height)})
    output$table1<-renderDataTable({judges.year()})
    output$table2<-renderDataTable({judgments.year()})
    output$table3<-renderDataTable({team.types2()})
@@ -399,15 +408,22 @@ team.types3<-reactive({
       need(nrow(subset.judges.court())>1,"Brak danych...")
     )
     
+    width  <- session$clientData$output_topImage_width
+    height <- session$clientData$output_topImage_height*1.5
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
     top<-judges.top.court()
     outfile <- tempfile(fileext='.svg')
     g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Łączna liczba orzeczeń",y="Sędzia",title="10 sędziów orzekających w największej liczbie spraw")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_shape()+scale_size_continuous(range = c(3,12))
-    ggsave(filename=(outfile),g1,width = 1.5*160,height=1.5*120,units ="mm")
+    ggsave(filename=(outfile),g1,width = 2*120,height=2*120*0.7,units ="mm") #height/width
     filename <- normalizePath(file.path(outfile))
     list(src=filename,
          alt="alt text",
-         width=1000,
-         height=750
+         width=width, #*pixelratio
+         height=width*0.7
+        # width=1000,
+         #height=750
     )  
     }, deleteFile = TRUE)
   
@@ -430,6 +446,11 @@ team.types3<-reactive({
     validate(
       need(vcount(subgraph.simplified.court())>1, "Brak danych...")
     )
+    width  <- session$clientData$output_pieImage_width
+    height <- session$clientData$output_pieImage_height
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    
     g<-subgraph.color.pie()
     lay<-subgraph.layout()
     outfile <- tempfile(fileext='.svg')
@@ -445,8 +466,10 @@ team.types3<-reactive({
     filename <- normalizePath(file.path(outfile))
     list(src=filename,
          alt="alt text",
-         width=1000,
-         height=1000
+         width=width,
+         height=width
+         #width=1000,
+         #height=1000
          )
   }, deleteFile = TRUE)
 })
