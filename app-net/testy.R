@@ -351,3 +351,52 @@ ggplot(judgments.year2, aes(x=sequence, y=number.judgments, group=1)) +
   theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
   geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
   geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
+
+judgm.count<- subset(judges,CourtCode==c.code1) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq)) %>% select(-freq) %>% group_by(liczba.s) %>% summarise(count=n())
+qplot(liczba.s, data=judgm.count,weight=count,fill=count, geom="bar")+
+  #ylim(0,max(judgm.count$count)*1.1)+
+  geom_text(aes(x=liczba.s,y=count+max(count)/30,label=count),size=4)+
+  scale_y_continuous(breaks=pretty_breaks(10))+
+  theme(legend.position="none")
+  
+ggplot(judgm.count, aes(x=liczba.s, y=count, width=0.5)) + 
+  geom_bar(aes(fill=count), stat="identity", position="identity")
+
+w=as.vector(E(g.sim)$weight)
+w.dist<-data.frame(w=w)
+      br<-if(length(unique(w.dist$w))>1) seq(min(w.dist$w,na.rm =T),max(w.dist$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
+      ggplot(w.dist,aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
+
+bby<-ceiling(max(w.dist$w)/20)
+br<-seq(1,max(w.dist$w),by=bby)
+ggplot(w.dist,aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
+  theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+  scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
+
+
+judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex"))
+ttypes2<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(major=ifelse(F>M,"kobiety",ifelse(F==M,"brak przewagi","mężczyźni"))) %>% mutate(typer=paste(ifelse(F>M,F,M),ifelse(F>M,M,F),sep="/"))
+ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% mutate(typer=ifelse(freq<10,"inne",typer)) %>% group_by(major,typer) %>% summarise(freq=sum(freq)) %>% filter(freq>=10)
+temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=freq) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
+ctypes2<-merge(ctypes2,temp,by="typer") %>% mutate(freq.x=freq.x/freq.y)
+names(ctypes2)[c(3,4)]<-c("freqmajor","typesum")
+ctypes2<-ddply(ctypes2, .(typer), transform, ymax = cumsum(freqmajor)) %>% mutate(ymin=ymax-freqmajor)
+ctypes2$xtext <- with(ctypes2, xmin + (xmax - xmin)/2)
+ctypes2$ytext <- with(ctypes2, ymin + (ymax - ymin)/2)
+ctypes2
+
+labels<-data.frame(xmean=team.types2()$xmin+(team.types2()$xmax-team.types2()$xmin)/2,text=team.types2()$typesum)
+gct<-ggplot(team.types2(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
+  geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
+  geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
+  annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=5)+
+  annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=5)+
+  annotate("text",label="Liczba orzeczeń: ",x=(min(labels$xmean*0.1)),y=-0.03,size=5)+
+  ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+  theme(axis.line=element_blank(),axis.text.x=element_blank(),
+        axis.text.y=element_blank(),axis.ticks=element_blank(),
+        axis.title.x=element_blank(),
+        axis.title.y=element_blank(),legend.position="bottom",
+        panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+        panel.grid.minor=element_blank(),plot.background=element_blank())

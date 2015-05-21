@@ -93,18 +93,14 @@ shinyServer(function(input, output, session) {
   })
   
   k.dist<-reactive({
-    {if(vcount(subgraph.simplified.court())==0) return(NULL)
-     else w=as.vector(E(subgraph.simplified.court())$weight)
-    }
+    if(vcount(subgraph.simplified.court())<2){ return(NULL)}
     k<-as.vector(degree(subgraph.simplified.court()))
     as.data.frame(k)
   })
   
   w.dist<-reactive({
-    
-    {if(ecount(subgraph.simplified.court())==0) return(NULL)
-     else w=as.vector(E(subgraph.simplified.court())$weight)
-    }
+    if(ecount(subgraph.simplified.court())==0){return(NULL)}
+     w=as.vector(E(subgraph.simplified.court())$weight)
     data.frame(w=w)
   })
   
@@ -130,7 +126,8 @@ shinyServer(function(input, output, session) {
   })
 
   team.size<-reactive({
-    judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
+    #judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
+    judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq)) %>% select(-freq) %>% group_by(liczba.s) %>% summarise(count=n())
   })
 
   team.types<-reactive({
@@ -158,6 +155,24 @@ shinyServer(function(input, output, session) {
   ctypes2
 })
 
+  
+  team.types2b<-reactive({
+    validate(
+      need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+    )
+    judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
+    ttypes2<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(major=ifelse(F>M,"kobiety",ifelse(F==M,"brak przewagi","mężczyźni"))) %>% mutate(typer=paste(ifelse(F>M,F,M),ifelse(F>M,M,F),sep="/"))
+    ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% mutate(typer=ifelse(freq<10,"inne",typer)) %>% group_by(major,typer) %>% summarise(freq=sum(freq)) %>% filter(freq>=10)
+    temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq)) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
+    ctypes2<-merge(ctypes2,temp,by="typer") %>% mutate(freq.x=freq.x/freq.y)
+    names(ctypes2)[c(3,4)]<-c("freqmajor","typesum")
+    ctypes2<-ddply(ctypes2, .(typer), transform, ymax = cumsum(freqmajor)) %>% mutate(ymin=ymax-freqmajor)
+    ctypes2$xtext <- with(ctypes2, xmin + (xmax - xmin)/2)
+    ctypes2$ytext <- with(ctypes2, ymin + (ymax - ymin)/2)
+    ctypes2
+  })
+
+
 team.types3<-reactive({
   validate(
     need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
@@ -177,18 +192,39 @@ team.types3<-reactive({
   })
   
   output$plot.k <- renderPlot({
-    if(is.null(k.dist())){return(NULL)}  
-    br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-    ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
-    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
-    
+    #if(is.null(k.dist())){return(NULL)}  
+    validate(
+      need(!is.null(k.dist()),"Brak danych...")
+    )
+    #br<-if(length(unique(k.dist()$k))>1) seq(min(k.dist()$k,na.rm =T),max(k.dist()$k,na.rm =T),length.out=20) else seq(0,20,length.out=20)
+#     ggplot(k.dist(),aes(x=k))+geom_histogram(breaks=br)+
+#       #scale_x_discrete
+#       labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
+#     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
+#     
+    bby<-ceiling(max(k.dist()$k)/20)
+    br<-seq(1,max(k.dist()$k),by=bby)
+    ggplot(k.dist(),aes(x=k))+geom_histogram(aes(fill=..count..),breaks=br)+
+      #scale_x_discrete
+      labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+      scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
   })
   
   output$plot.w <- renderPlot({
-    if(is.null(w.dist())){return(NULL)}
-      br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
-      ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
-      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
+    #if(is.null(w.dist())){return(NULL)}
+    validate(
+      need(!is.null(w.dist()),"Brak danych...")
+    )
+#       br<-if(length(unique(w.dist()$w))>1) seq(min(w.dist()$w,na.rm =T),max(w.dist()$w,na.rm =T),length.out=20) else seq(0,20,length.out=20)
+#       ggplot(w.dist(),aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
+#       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_x_continuous(breaks=pretty_breaks(20))
+
+    bby<-ceiling(max(w.dist()$w)/20)
+    br<-seq(1,max(w.dist()$w),by=bby)
+    ggplot(w.dist(),aes(x=w))+geom_histogram(aes(fill=..count..),breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+      scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
   })
 #   
 #   plot.comp <- reactive({
@@ -197,7 +233,10 @@ team.types3<-reactive({
 #   })
   
   output$plot.judges <- renderPlot({
-    if(nrow(judges.year())==0){return(NULL)}
+    #if(nrow(judges.year())==0){return(NULL)}
+    validate(
+      need(sum(!is.na(judges.year()$number.judges))>1,"Brak danych...")
+    )
     siz<-c(1,2,3,4,6,12,24)
     bylab<-siz[which(length(judges.year()$Data)/44 < siz)[1]]
     br1<-judges.year()$Data[seq(1,length(judges.year()$Data),by=bylab)]
@@ -220,7 +259,10 @@ team.types3<-reactive({
   })
   
   output$plot.judgments<- renderPlot({
-    if(nrow(judgments.year())==0){return(NULL)}
+    #if(nrow(judgments.year())==0){return(NULL)}
+    validate(
+      need(sum(!is.na(judgments.year()$number.judgments))>1,"Brak danych...")
+    )
     siz<-c(1,2,3,4,6,12,24)
     bylab<-siz[which(length(judgments.year()$Data)/44 < siz)[1]]
     br1<-judgments.year()$Data[seq(1,length(judgments.year()$Data),by=bylab)]
@@ -241,10 +283,19 @@ team.types3<-reactive({
   })
 
   output$plot.team.size<-renderPlot({
-    ggplot(team.size(),aes(x=liczba.s))+geom_histogram()+
-    labs(x="Liczba sędziów w składzie",y="Liczba wystąpień",title="Wykres pokazujący wielkość składów sędziowskich")+
-    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
-  })
+    validate(
+      need(nrow(team.size())>1,"Brak danych...")
+    )
+#     ggplot(team.size(),aes(x=liczba.s))+geom_histogram()+
+#     labs(x="Liczba sędziów w składzie",y="Liczba wystąpień",title="Wykres pokazujący wielkość składów sędziowskich")+
+#       #ylim(0,max())
+#     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))
+    ggplot(team.size(), aes(x=liczba.s, y=count, width=0.5)) + 
+      geom_bar(aes(fill=count), stat="identity", position="identity")+
+            geom_text(aes(x=liczba.s,y=count+max(count)/30,label=count),size=5)+
+            scale_y_continuous(breaks=pretty_breaks(10))+
+            theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")
+  },width=1000,height=600)
   
   output$plot.team.types<-renderPlot({
     validate(
@@ -258,10 +309,30 @@ team.types3<-reactive({
 
   output$plot.team.types2<-renderPlot({
     validate(
-      need(nrow(team.types2())!=0,"Trwa ładowanie danych...")
+      need(nrow(team.types2())>1,"Brak danych...")
     )
     labels<-data.frame(xmean=team.types2()$xmin+(team.types2()$xmax-team.types2()$xmin)/2,text=team.types2()$typesum)
     ggplot(team.types2(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
+      geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
+      geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
+      annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=5)+
+      annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=5)+
+      annotate("text",label="Liczba orzeczeń: ",x=(min(labels$xmean*0.1)),y=-0.03,size=5)+
+      ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+      theme(axis.line=element_blank(),axis.text.x=element_blank(),
+            axis.text.y=element_blank(),axis.ticks=element_blank(),
+            axis.title.x=element_blank(),
+            axis.title.y=element_blank(),legend.position="bottom",
+            panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
+            panel.grid.minor=element_blank(),plot.background=element_blank())
+  },width = 1100, height = 600, res = 72)
+  
+  output$plot.team.types2b<-renderPlot({
+    validate(
+      need(nrow(team.types2b())>1,"Brak danych...")
+    )
+    labels<-data.frame(xmean=team.types2b()$xmin+(team.types2b()$xmax-team.types2b()$xmin)/2,text=team.types2b()$typesum)
+    ggplot(team.types2b(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
       geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
       geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
       annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=5)+
@@ -292,9 +363,11 @@ team.types3<-reactive({
   })
   
 #   output$text1<-renderText({subgraph.summary()})
-   output$table1<-renderDataTable({team.types2()})
-#   output$table2<-renderDataTable({judges.coop.year()})
-#   output$table3<-renderDataTable({court.divisions()})
+   output$table1<-renderDataTable({judges.year()})
+   output$table2<-renderDataTable({judgments.year()})
+   output$table3<-renderDataTable({team.types2()})
+  output$table4<-renderDataTable({team.size()})
+    
 # 
 
 # stare rysowanie sieci bez svg
@@ -319,8 +392,13 @@ team.types3<-reactive({
   
   output$topImage<-renderImage({
     validate(
-      need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
+      need(nrow(subset.judges.court())>0,"Trwa ładowanie danych...")
     )
+    
+    validate(
+      need(nrow(subset.judges.court())>1,"Brak danych...")
+    )
+    
     top<-judges.top.court()
     outfile <- tempfile(fileext='.svg')
     g1<-ggplot(top,aes(x=N.of.judgments,y=JudgeName,size=N.of.judgments))+geom_point()+labs(x="Łączna liczba orzeczeń",y="Sędzia",title="10 sędziów orzekających w największej liczbie spraw")+geom_segment(x =0, y =nrow(top):1 , aes(xend =(N.of.judgments-0.50*sqrt(N.of.judgments/pi))), yend = nrow(top):1,size=0.7)+theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(face="bold",angle=0, vjust=0.5, size=10),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+scale_shape()+scale_size_continuous(range = c(3,12))
@@ -344,10 +422,13 @@ team.types3<-reactive({
 #     t.sim<-system.time(subgraph.simplified.court())[1]
 #     paste("Times",t.lay,t.g,t.sim,t.pie,t.multi,sep=";")
 #   })
-  
+
   output$pieImage <- renderImage({
     validate(
       need(vcount(subgraph.simplified.court())>0, "Trwa ładowanie danych...")
+    )
+    validate(
+      need(vcount(subgraph.simplified.court())>1, "Brak danych...")
     )
     g<-subgraph.color.pie()
     lay<-subgraph.layout()

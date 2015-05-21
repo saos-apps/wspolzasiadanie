@@ -4,24 +4,30 @@ shinyUI(fluidPage(
     sidebarPanel(
       uiOutput("select.court"),
       helpText("Aplikacja ma na celu zaprezentowanie struktury składów orzekających w polskich sądach. Interesujący nas sąd możemy wybrać z list powyżej.
-              W prawej części aplikacji prezentowane są: sieć oraz Top chart sędziów  danym sądzie. Ponadto w zakładce Statystyki możemy zobaczyć podstawową analizę sieci.
-               "),
-      helpText("W zakładce 'Sieć współzasiadania' zobaczyć możemy sieć złożoną z sędziów orzekających w danym sądzie.
-               Każdy wierzchołek tej sieci reprezentuje jednego sędziego. Połączenie pomiędzy wierzchołkami oznacza, że dwóch konkretnych sędziów
-               zasiadało w tym samym składzie sędziowskim przynajmniej jeden raz. 
-               Każdy wierzchołek jest wypełniony kolorem (bądź kolorami) Każdt kolor odnosi się do wydziału/ izby w której dany sędzia orzekał.
-               Kolor obramowania wierzchołka opisuje płeć sędziego"),
-      helpText("Wydziały są zgrupowane w jeden jeżeli zajmują się tym samym typem spraw (np. Wydział I i II Karny jako Wydział Karny)"),
-      helpText("Wykres typu 'Top chart' prezentuje dziesięciu sędziów orzekających w danym sądzie z największą liczbą orzeczeń"),
+              W prawej części aplikacji, w kolejnych zakładkach prezentowane są: sieć współzasiadania, wykres 10 sędziów orzekających w największej liczbie
+               spraw w danym sądzie oraz kilka statystyk dla wybranej sieci. Opisy modułów znajdują się w odpowiednich zakładkach."),
       br(),br(),
       img(src = "icm_logo.png", height = 100*0.75, width = 156*0.75)
       
     ),
     mainPanel( 
       tabsetPanel(
-        tabPanel("Testy",dataTableOutput("table1")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
-        tabPanel("Sieć współzasiadania",imageOutput("pieImage")),
-        tabPanel("Sędziowie",  imageOutput("topImage")),
+        tabPanel("Testy",dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3"),dataTableOutput("table4")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
+        tabPanel("Sieć współzasiadania",imageOutput("pieImage"),
+                 br(),br(),br(),br(),br(),br(),br(),br(),br(),br(), br(),br(),br(),br(),br(),br(),br(),
+                 helpText("Powyższy rysunek przedstawia sieć złożoną z sędziów orzekających w wybranym sądzie.
+               Każdy wierzchołek tej sieci reprezentuje jednego sędziego. Połączenie pomiędzy wierzchołkami oznacza, że dwóch konkretnych sędziów
+               zasiadało w tym samym składzie orzekających przynajmniej jeden raz. 
+               Każdy wierzchołek jest wypełniony kolorem (bądź kolorami), które odnoszą się do wydziału/ izby w której dany sędzia orzekał.
+               Kolor obramowania wierzchołka określa płeć sędziego"),
+                 helpText("Wydziały są zgrupowane w jeden jeżeli zajmują się tym samym typem spraw (np. Wydział I i II Karny jest przedstawiony jako
+                          Wydział Karny)")
+                 ),
+        tabPanel("Sędziowie",  imageOutput("topImage"),
+                 br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
+                 helpText("Wykres prezentuje dziesięciu sędziów orzekających w danym sądzie w największej liczbie spraw. Na osi poziomej
+                          odłożona została liczba spraw, w których dany sędzia orzekał.")
+                 ),
         navbarMenu("Statystyki",
                    tabPanel("Liczba orzeczeń w czasie",plotOutput("plot.judgments"),
                             helpText("Na wykresie możemy porównać liczbę orzeczeń wydawanych w kolejnych miesiącach w wybranym przez nas sądzie.
@@ -39,8 +45,10 @@ shinyUI(fluidPage(
                                      a ile z przewagą mężczyzn. Szerokość kolejnych słupków odpowiada ilości orzeczeń wydanych przez odpowiednie
                                      składy sędziowskie. Kolor zielony oznacza składy z przewagą kobiet, niebieski składy z przewagą mężczyzn,
                                      czerwony natomiast składy gdzie nie było przewagi (składy typu 1/1)")),
+                   tabPanel("Typy składów orzekających v.2b",plotOutput("plot.team.types2b")),
                    tabPanel("Typy składów orzekających v.3",plotOutput("plot.team.types3"),br(),br(),helpText("Opis wykresu...")),
                    tabPanel("Wielkości składów orzekających",plotOutput("plot.team.size"),
+                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Na wykresie możemy zobaczyć ile było składów o danej wielkości (pod względem liczby orzekających sędziów)
                                      w danym sądzie. Wysokość słupka odpowiada liczbie składów orzekających o danej wielkości.")),
                    tabPanel("Rozkład k",plotOutput("plot.k"),
