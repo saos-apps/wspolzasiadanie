@@ -1,7 +1,7 @@
 ---
 title: "Readme"
 author: "Patryk Skowron"
-date: "27.03.2015"
+date: "30.03.2015"
 output: html_document
 ---
 

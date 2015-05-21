@@ -378,7 +378,7 @@ ggplot(w.dist,aes(x=w))+geom_histogram(breaks=br)+labs(x="w - ile razy dwóch s�
 judg.cnt<-plyr::count(judges.sub,c("judgmentID","JudgeSex"))
 ttypes2<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(major=ifelse(F>M,"kobiety",ifelse(F==M,"brak przewagi","mężczyźni"))) %>% mutate(typer=paste(ifelse(F>M,F,M),ifelse(F>M,M,F),sep="/"))
 ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% mutate(typer=ifelse(freq<10,"inne",typer)) %>% group_by(major,typer) %>% summarise(freq=sum(freq)) %>% filter(freq>=10)
-temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=freq) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
+temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq)) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
 ctypes2<-merge(ctypes2,temp,by="typer") %>% mutate(freq.x=freq.x/freq.y)
 names(ctypes2)[c(3,4)]<-c("freqmajor","typesum")
 ctypes2<-ddply(ctypes2, .(typer), transform, ymax = cumsum(freqmajor)) %>% mutate(ymin=ymax-freqmajor)
@@ -386,8 +386,8 @@ ctypes2$xtext <- with(ctypes2, xmin + (xmax - xmin)/2)
 ctypes2$ytext <- with(ctypes2, ymin + (ymax - ymin)/2)
 ctypes2
 
-labels<-data.frame(xmean=team.types2()$xmin+(team.types2()$xmax-team.types2()$xmin)/2,text=team.types2()$typesum)
-gct<-ggplot(team.types2(), aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
+labels<-data.frame(xmean=ctypes2$xmin+(ctypes2$xmax-ctypes2$xmin)/2,text=ctypes2$typesum)
+gct<-ggplot(ctypes2, aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fill = major))+geom_rect(colour = I("grey"))+
   geom_text(aes(x = xtext, y = ytext, label = ifelse(xmin==0,paste(major," - ",round(100*freqmajor,1), "%", sep = ""),paste(round(100*freqmajor,1), "%", sep = ""))), size = 4.5)+
   geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
   annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=5)+

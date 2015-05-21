@@ -209,7 +209,7 @@ team.types3<-reactive({
       labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
-  })
+  },width=1000,height=600)
   
   output$plot.w <- renderPlot({
     #if(is.null(w.dist())){return(NULL)}
@@ -225,7 +225,7 @@ team.types3<-reactive({
     ggplot(w.dist(),aes(x=w))+geom_histogram(aes(fill=..count..),breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
-  })
+  },width=1000,height=600)
 #   
 #   plot.comp <- reactive({
 #       if(is.null(max.component())){return(NULL)}
@@ -256,7 +256,7 @@ team.types3<-reactive({
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
       geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
-  })
+  },width=1000,height=600)
   
   output$plot.judgments<- renderPlot({
     #if(nrow(judgments.year())==0){return(NULL)}
@@ -280,7 +280,7 @@ team.types3<-reactive({
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
       geom_text(data=plabels,aes(x=x, label=year,y=y), colour="blue", angle=0, text=element_text(size=10),hjust =-0.1)
-  })
+  },width=1000,height=600)
 
   output$plot.team.size<-renderPlot({
     validate(
@@ -305,7 +305,7 @@ team.types3<-reactive({
     labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_fill_continuous()
-  })
+  },width=1000,height=600)
 
   output$plot.team.types2<-renderPlot({
     validate(
@@ -325,7 +325,7 @@ team.types3<-reactive({
             axis.title.y=element_blank(),legend.position="bottom",
             panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),plot.background=element_blank())
-  },width = 1100, height = 600, res = 72)
+  },width=1000,height=600)
   
   output$plot.team.types2b<-renderPlot({
     validate(
@@ -345,7 +345,7 @@ team.types3<-reactive({
             axis.title.y=element_blank(),legend.position="bottom",
             panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
             panel.grid.minor=element_blank(),plot.background=element_blank())
-  },width = 1100, height = 600, res = 72)
+  },width=1000,height=600)
 
   output$plot.team.types3<-renderPlot({
     validate(
@@ -355,7 +355,7 @@ team.types3<-reactive({
       scale_color_continuous(low="lightblue4",high="blue4")+
       theme(legend.position="none")+
       geom_text(aes(x=M,y=F,label=freq),size=4,color="white") #fill=(M/(F+M))
-  })
+  },width=1000,height=600)
 
   plot.sex<-reactive({
     if(nrow(subset.judges.clean())==0){return(NULL)}

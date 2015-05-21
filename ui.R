@@ -30,10 +30,12 @@ shinyUI(fluidPage(
                  ),
         navbarMenu("Statystyki",
                    tabPanel("Liczba orzeczeń w czasie",plotOutput("plot.judgments"),
+                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Na wykresie możemy porównać liczbę orzeczeń wydawanych w kolejnych miesiącach w wybranym przez nas sądzie.
                                      Należy wziąć pod uwagę, że wykres pokazuje tylko orzeczenia które są dostępne przez API, co może wpływać na 
                                      kształt wykresu")),
                    tabPanel("Liczba orzekających sędziów w czasie",plotOutput("plot.judges"),
+                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Wykres przedstawia liczbe sędziów, którzy byli członkami przynajmniej jednego składu orzekającego na wydanym 
                                       orzeczeniu w kolejnych miesiącach. Należy wziąć pod uwagę, że wykres pokazuje tylko orzeczenia które są 
                                       dostępne przez API, co może wpływać na kształt wykresu")),
@@ -52,11 +54,13 @@ shinyUI(fluidPage(
                             helpText("Na wykresie możemy zobaczyć ile było składów o danej wielkości (pod względem liczby orzekających sędziów)
                                      w danym sądzie. Wysokość słupka odpowiada liczbie składów orzekających o danej wielkości.")),
                    tabPanel("Rozkład k",plotOutput("plot.k"),
+                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Wykres pokazuje stopnie wierzchołków w sieci współzasiadania sędziów. Stopień wierzchołka odpowiada liczbie
                                      bezpośrednich połączeń danego sędziego z innymi sędziami w danym sądzie. Bezpośrednie połączenie występuje
                                      w przypadku, kiedy dwóch sędziów wydało razem przynajmniej jedno orzeczenie.
                                      Wysokości słupków oznaczają liczbę sędziów o danej liczbie bezpośrednich sąsiadów.")),
                    tabPanel("Rozkład w",plotOutput("plot.w"),
+                            br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),br(),
                             helpText("Wykres przedstawia wagi krawędz w sieci współzasiadania sędziów. Krawędź jest to linia łącząca wierzchołki 
                                      czyli dwóch sędziów. Sędziowie połączeni są krawędzią w przypadku, kiedy wydali razem przynajmniej jedno 
                                      orzeczenie. Waga krawędzi to liczba orzeczeń, przy których wydawaniu uczestniczyło razem dwóch sędziów
