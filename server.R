@@ -127,7 +127,7 @@ shinyServer(function(input, output, session) {
 
   team.size<-reactive({
     #judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq))
-    judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq)) %>% select(-freq) %>% group_by(liczba.s) %>% summarise(count=n())
+    judgm.count<- subset(judges,CourtCode==input$select.court) %>% plyr::count(.,"judgmentID") %>% mutate(liczba.s=as.factor(freq)) %>% select(-freq) %>% group_by(liczba.s) %>% dplyr::summarise(count=n())
   })
 
   team.types<-reactive({
@@ -135,7 +135,9 @@ shinyServer(function(input, output, session) {
       need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
     )
     judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
-    temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) %>% mutate(frac=F/(F+M)) 
+    temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% filter(F+M>0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) %>% mutate(frac=F/(F+M)) %>% group_by(F,M,typestring,frac) %>% dplyr::summarise(count=n())
+    if(nrow(temp)>25){temp<-temp %>% ungroup() %>% mutate(typestring=paste(F,"k.\n",M,"m."))}
+    temp
   })
 
   team.types2<-reactive({
@@ -162,7 +164,7 @@ shinyServer(function(input, output, session) {
     )
     judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
     ttypes2<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% mutate(major=ifelse(F>M,"kobiety",ifelse(F==M,"brak przewagi","mężczyźni"))) %>% mutate(typer=paste(ifelse(F>M,F,M),ifelse(F>M,M,F),sep="/"))
-    ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% mutate(typer=ifelse(freq<10,"inne",typer)) %>% group_by(major,typer) %>% summarise(freq=sum(freq)) %>% filter(freq>=10)
+    ctypes2<-plyr::count(ttypes2,c("major","typer")) %>% mutate(typer=ifelse(freq<10,"inne",typer)) %>% group_by(major,typer) %>% dplyr::summarise(freq=sum(freq)) %>% filter(freq>=10)
     temp<-aggregate(freq ~ typer,ctypes2,sum) %>% mutate(freqnorm=ifelse(freq<sum(freq)/17,sum(freq)/17,freq)) %>% arrange(desc(freqnorm)) %>% mutate(xmax=cumsum(freqnorm),xmin=(xmax-freqnorm))
     ctypes2<-merge(ctypes2,temp,by="typer") %>% mutate(freq.x=freq.x/freq.y)
     names(ctypes2)[c(3,4)]<-c("freqmajor","typesum")
@@ -178,7 +180,7 @@ team.types3<-reactive({
     need(nrow(subset.judges.court())!=0,"Trwa ładowanie danych...")
   )
   judg.cnt<-plyr::count(subset.judges.court(),c("judgmentID","JudgeSex"))
-  ttypes3<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% plyr::count(.,c("F","M")) %>% filter(F!=0 | M!=0)
+  ttypes3<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% plyr::count(.,c("F","M")) %>% filter(F+M>0)
 })
 
 
@@ -302,10 +304,18 @@ team.types3<-reactive({
     validate(
       need(nrow(team.types())!=0,"Trwa ładowanie danych...")
     )
-    qplot(typestring,data=team.types(),geom="bar",fill=frac)+
-    labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
-    theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
-      scale_fill_continuous()
+#     qplot(typestring,data=team.types(),geom="bar",fill=frac)+
+#     labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+#     theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
+#       scale_fill_continuous()+
+#       
+    ggplot(team.types(), aes(x=typestring, y=count, width=0.5)) + 
+      geom_bar(aes(fill=count), stat="identity", position="identity")+
+      labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
+      geom_text(aes(x=typestring,y=count+max(count)/30,label=count),size=5)+
+      scale_y_continuous(breaks=pretty_breaks(10))+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")
+    
   }) #,width=1000,height=600)
 
   output$plot.team.types2<-renderPlot({
@@ -318,7 +328,7 @@ team.types3<-reactive({
       geom_text(aes(x = xtext, y = 1.03, label = typer), size = 5)+
       annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=5)+
       annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=5)+
-      annotate("text",label="Liczba orzeczeń: ",x=(min(labels$xmean*0.1)),y=-0.03,size=5)+
+      annotate("text",label="L. orzeczeń: ",x=(0),y=-0.03,size=5)+ #min(labels$xmean*0.1)
       ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
       theme(axis.line=element_blank(),axis.text.x=element_blank(),
             axis.text.y=element_blank(),axis.ticks=element_blank(),
@@ -338,7 +348,7 @@ team.types3<-reactive({
       geom_text(aes(x = xtext, y = 1.03, label = typer), size = 4)+
       annotate("text",label="Typ składu: ",x=(min(labels$xmean*0.1)),y=1.03,size=4)+
       annotate("text",x=labels$xmean,y=-0.03,label=labels$text,size=4)+
-      annotate("text",label="Liczba orzeczeń: ",x=(min(labels$xmean*0.15)),y=-0.03,size=4)+
+      annotate("text",label="  L. orzeczeń: ",x=(0),y=-0.03,size=4)+ #min(labels$xmean*0.15)
       ggtitle("Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
       scale_fill_manual(name="",values=c("kobiety"="indianred3","mężczyźni"="royalblue3","brak przewagi"="grey45"))+
       theme(axis.line=element_blank(),axis.text.x=element_blank(),
@@ -353,11 +363,46 @@ team.types3<-reactive({
     validate(
       need(nrow(team.types3())!=0,"Trwa ładowanie danych...")
     )
-    ggplot(team.types3(),aes(x=M,y=F))+geom_point(aes(size=freq,colour=F/(F+M)))+scale_size_continuous(range = c(10,30))+scale_shape()+
-      scale_color_continuous(low="lightblue4",high="blue4")+
-      theme(legend.position="none")+
-      geom_text(aes(x=M,y=F,label=freq),size=4,color="white") #fill=(M/(F+M))
+    ggplot(team.types3(),aes(x=M,y=F))+geom_point(aes(size=freq,colour=F/(F+M)))+
+      scale_size_continuous(range = c(9,20))+scale_shape()+
+      scale_color_continuous(low="orange",high="firebrick3")+
+      scale_x_continuous(limits=c(-1,1+max(team.types3()$M)),breaks=seq(0,max(team.types3()$M)))+
+      scale_y_continuous(limits=c(-1,1+max(team.types3()$F)),breaks=seq(0,max(team.types3()$F)))+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0,face="bold", hjust=0.5,vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")+
+      geom_text(aes(x=M,y=F,label=freq),size=3.5,color="white",fontface=2)+
+      labs(x="Liczba mężczyzn",y="Liczba kobiet")+
+      coord_fixed(ratio = 1)
+    
   }) #,width=1000,height=600)
+  
+  output$typesImage<-renderImage({
+    validate(
+      need(nrow(team.types3())!=0,"Trwa ładowanie danych...")
+    )
+    width  <- session$clientData$output_typesImage_width
+    height <- session$clientData$output_typesImage_height
+    # For high-res displays, this will be greater than 1
+    pixelratio <- session$clientData$pixelratio
+    outfile <- tempfile(fileext='.svg')
+    xylim<-max(c(team.types3()$M,team.types3()$F))
+    g1<-ggplot(team.types3(),aes(x=M,y=F))+geom_point(aes(size=freq,colour=F/(F+M)))+
+      scale_size_continuous(range = c(11,25))+scale_shape()+
+      scale_color_continuous(low="orange",high="firebrick3")+
+      scale_x_continuous(limits=c(-1,1+xylim),breaks=seq(0,xylim))+
+      scale_y_continuous(limits=c(-1,1+xylim),breaks=seq(0,xylim))+
+      theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0,face="bold", hjust=0.5,vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")+
+      geom_text(aes(x=M,y=F,label=freq),size=4.2,color="white",fontface=2)+
+      labs(x="Liczba mężczyzn",y="Liczba kobiet")
+    ggsave(filename=(outfile),g1,width = height*0.8,height=height*0.8,units ="mm") #height/width
+    filename <- normalizePath(file.path(outfile))
+    list(src=filename,
+         alt="alt text",
+         width=width*0.7, #*pixelratio
+         height=width*0.7
+         # width=1000,
+         #height=750
+    )
+})
 
   plot.sex<-reactive({
     if(nrow(subset.judges.clean())==0){return(NULL)}
@@ -365,19 +410,27 @@ team.types3<-reactive({
   })
   
   output$topbreaks <- renderUI({
+    if(round((session$clientData$output_topImage_width-550)/30)>0){
     HTML(rep("<br/>",round((session$clientData$output_topImage_width-550)/30)))
+    }
   })
 
   output$netbreaks <- renderUI({
+    if(round((session$clientData$output_pieImage_width-500)/30)>0){
     HTML(rep("<br/>",round((session$clientData$output_pieImage_width-500)/30)))
+    }
   })
-   output$text1<-renderText({c(session$clientData$output_pieImage_width,"   ",session$clientData$output_topImage_height)})
-   output$table1<-renderDataTable({judges.year()})
-   output$table2<-renderDataTable({judgments.year()})
-   output$table3<-renderDataTable({team.types2()})
-  output$table4<-renderDataTable({team.size()})
-    
-# 
+
+output$typbreaks <- renderUI({
+  if(round((session$clientData$output_typesImage_width*0.7 - 530)/10)>0){
+  HTML(rep("<br/>",round((session$clientData$output_typesImage_width*0.7 - 530)/10)))
+  }
+})
+#    output$text1<-renderText({c(session$clientData$output_typesImage_width,"   ",session$clientData$output_topImage_height)})
+#    output$table1<-renderDataTable({judges.year()})
+#    output$table2<-renderDataTable({judgments.year()})
+#    output$table3<-renderDataTable({team.types()})
+#   output$table4<-renderDataTable({team.size()})
 
 # stare rysowanie sieci bez svg
   output$plot.pie<-renderPlot({

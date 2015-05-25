@@ -400,3 +400,9 @@ gct<-ggplot(ctypes2, aes(ymin = ymin, ymax = ymax, xmin = xmin, xmax = xmax, fil
         axis.title.y=element_blank(),legend.position="bottom",
         panel.background=element_blank(),panel.border=element_blank(),panel.grid.major=element_blank(),
         panel.grid.minor=element_blank(),plot.background=element_blank())
+
+subset.judges.court<-judges.sub
+judg.cnt<-plyr::count(subset.judges.court,c("judgmentID","JudgeSex"))
+temp<-spread(judg.cnt,JudgeSex,freq,fill = 0) %>% filter(F+M>0) %>% mutate(typestring=paste(F,ifelse(F==1,"kobieta","kobiet"),"i\n",M,ifelse(M==1,"mężczyzna","mężczyzn"))) %>% mutate(frac=F/(F+M)) %>% group_by(F,M,typestring,frac) %>% dplyr::summarise(count=n())
+if(nrow(temp)>25){temp<-temp %>% mutate(typestring=paste(F,"k.\n",M,"m."))}
+
