@@ -208,7 +208,7 @@ team.types3<-reactive({
     br<-seq(1,max(k.dist()$k),by=bby)
     ggplot(k.dist(),aes(x=k))+geom_histogram(aes(fill=..count..),breaks=br)+
       #scale_x_discrete
-      labs(x="k - liczba bezpośrednich połączeń z innymi sędziami",y="Liczba wystąpień",title="Histogram zmiennej k")+
+      labs(x="Liczba współorzekających sędziów.",y="Liczba sędziów",title="Współzasiadanie (sędziowie)")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
   }) #,width=1000,height=600)
@@ -224,7 +224,7 @@ team.types3<-reactive({
 
     bby<-ceiling(max(w.dist()$w)/20)
     br<-seq(1,max(w.dist()$w),by=bby)
-    ggplot(w.dist(),aes(x=w))+geom_histogram(aes(fill=..count..),breaks=br)+labs(x="w - ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Histogram zmiennej w")+
+    ggplot(w.dist(),aes(x=w))+geom_histogram(aes(fill=..count..),breaks=br)+labs(x="Ile razy dwóch sędziów zasiadało w tym samym składzie sędziowskim",y="Liczba wystąpień",title="Współzasiadanie (orzeczenia)")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       scale_x_continuous(breaks=br[-1]-bby/2,labels=br[-1])
   }) #,width=1000,height=600)
@@ -249,11 +249,11 @@ team.types3<-reactive({
     #  for(i in 1:12){br2<-gsub(pattern = mon$abr[i],paste0(mon$pe[i],"\n"),br2)}
     plabels<-data.frame(x=xlab,year=yearlabel,y=1.05*(max(judges.year()$number.judges,na.rm=T)))
     
-    ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +  
+    ggplot(judges.year(), aes(x=Data, y=number.judges, group=1)) +
     geom_point(stat='summary', fun.y=sum) +
     stat_summary(fun.y=sum, geom="line")+
       scale_x_discrete(labels=br2,breaks=br1)+
-      labs(x="miesiąc",y="Liczba orzekających sędziów",title="Liczba orzekających sędziów")+
+      labs(x="miesiąc",y="Liczba orzekających sędziów",title="Liczba orzekających sędziów w czasie")+
       ylim(0,max(judges.year()$number.judges)*1.1)+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"))+
       geom_vline(xintercept =xlab[-1],colour="grey45",alpha=0.7,linetype="longdash")+
@@ -310,10 +310,11 @@ team.types3<-reactive({
 #       scale_fill_continuous()+
 #       
     ggplot(team.types(), aes(x=typestring, y=count, width=0.5)) + 
-      geom_bar(aes(fill=count), stat="identity", position="identity")+
+      geom_bar(aes(fill=frac), stat="identity", position="identity")+
       labs(x="Typ składu orzekającego",y="Liczba wystąpień",title="Wykres pokazujący wszystkie typy składów orzekających z podziałem na płeć")+
       geom_text(aes(x=typestring,y=count+max(count)/30,label=count),size=5)+
       scale_y_continuous(breaks=pretty_breaks(10))+
+      scale_fill_continuous(low="royalblue3",high="indianred3")+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0, vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")
     
   }) #,width=1000,height=600)
@@ -387,7 +388,8 @@ team.types3<-reactive({
     xylim<-max(c(team.types3()$M,team.types3()$F))
     g1<-ggplot(team.types3(),aes(x=M,y=F))+geom_point(aes(size=freq,colour=F/(F+M)))+
       scale_size_continuous(range = c(11,25))+scale_shape()+
-      scale_color_continuous(low="orange",high="firebrick3")+
+      #scale_color_continuous(low="orange",high="firebrick3")+
+      scale_color_continuous(low="royalblue3",high="indianred3")+
       scale_x_continuous(limits=c(-1,1+xylim),breaks=seq(0,xylim))+
       scale_y_continuous(limits=c(-1,1+xylim),breaks=seq(0,xylim))+
       theme(axis.title.x = element_text(face="bold", colour="#990000", size=14),axis.title.y = element_text(face="bold", colour="#990000", size=14),axis.text.y  = element_text(angle=0,face="bold", hjust=0.5,vjust=0.5, size=12),axis.text.x  = element_text(face="bold",angle=0, vjust=0.5, size=12),legend.position="none",plot.title=element_text(face="bold",angle=0, vjust=0.5, size=14,colour="#990000"),legend.position="none")+
