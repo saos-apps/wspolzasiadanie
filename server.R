@@ -424,11 +424,11 @@ team.types3<-reactive({
   })
 
 output$typbreaks <- renderUI({
-  if(round((session$clientData$output_typesImage_width*0.7 - 530)/10)>0){
-  HTML(rep("<br/>",round((session$clientData$output_typesImage_width*0.7 - 530)/10)))
+  if(round((session$clientData$output_typesImage_width*0.7 - 410)/20)>0){
+  HTML(rep("<br/>",1+round((session$clientData$output_typesImage_width*0.7 - 410)/20)))
   }
 })
-#    output$text1<-renderText({c(session$clientData$output_typesImage_width,"   ",session$clientData$output_topImage_height)})
+    output$text1<-renderText({c(session$clientData$output_typesImage_width,"   ",session$clientData$output_typesImage_height)})
 #    output$table1<-renderDataTable({judges.year()})
 #    output$table2<-renderDataTable({judgments.year()})
 #    output$table3<-renderDataTable({team.types()})

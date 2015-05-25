@@ -9,6 +9,7 @@ require(XML)
 require(httr)
 require(saos)
 
+
 ## 0.wczytanie danych
 # COMMON
 #input<-readRDS("app-net/data/common_courts_data.RDS")
@@ -53,6 +54,7 @@ comm.division<-saos::extract(common.list,"division")
 comm.judges<-saos::extract(common.list,"judges")
 comm.divisions<-subset(comm.division,select=c("id","court.code","court.name","code","name"))
 names(comm.divisions)<-c("judgmentID","CourtCode","CourtName","DivisionCode","DivisionName")
+
 
 # APPEAL
 appeal.list<-lapply(seq(1994,2015),function(y) lapply(seq(1,12),function(m) readRDS(paste0(path,paste("appeal",y,".",m,sep=""),".rds"))))
@@ -144,7 +146,6 @@ llist1<-lapply(j.names$name,function(x) which(judges$JudgeName==x))
 temp<-as.data.frame(t(sapply(seq(nrow(j.names)),function(x) {t<-strsplit(j.names$name[x]," ");c(unlist(t)[1],unlist(t)[2])})))
 names(temp)<-c("name","surname")
 temp$sex<-NA
-
 
 url<-"http://www.behindthename.com/names/gender/masculine/usage/polish"
 html2=GET(url)
