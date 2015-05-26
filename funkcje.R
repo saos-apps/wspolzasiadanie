@@ -101,7 +101,7 @@ plog.legend.svg<-function(list){
 }
 plog.sex.svg<-function(){
   label=c("Kobieta","Mężczyzna","Brak danych")
-  frame.color=c(brewer.pal(5,"Set3")[5],brewer.pal(4,"Set3")[4],brewer.pal(8,"Set2")[8])
+  frame.color=c(brewer.pal(4,"Set3")[4],brewer.pal(5,"Set3")[5],brewer.pal(8,"Set2")[8])
   lay.leg<-matrix(c(seq(-5,5,length.out=3),rep(3,3)),byrow = F,nrow = 3)
   plot(0,xlim=c(-1,1),ylim=c(-6,7),type = "n",frame.plot = F,axes=F, xlab="", ylab="")
   yc<-seq(5,0,length.out=3)

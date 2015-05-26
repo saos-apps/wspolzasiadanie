@@ -428,7 +428,7 @@ output$typbreaks <- renderUI({
   HTML(rep("<br/>",1+round((session$clientData$output_typesImage_width*0.7 - 410)/20)))
   }
 })
-    output$text1<-renderText({c(session$clientData$output_typesImage_width,"   ",session$clientData$output_typesImage_height)})
+#     output$text1<-renderText({c(session$clientData$output_typesImage_width,"   ",session$clientData$output_typesImage_height)})
 #    output$table1<-renderDataTable({judges.year()})
 #    output$table2<-renderDataTable({judgments.year()})
 #    output$table3<-renderDataTable({team.types()})

@@ -12,7 +12,7 @@ shinyUI(fluidPage(
     ),
     mainPanel( 
       tabsetPanel(
-        tabPanel("Testy",textOutput("text1")),#,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3"),dataTableOutput("table4")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
+        #tabPanel("Testy",textOutput("text1")),#,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3"),dataTableOutput("table4")),#,textOutput("text1"), textOutput("times"),,dataTableOutput("table1"),dataTableOutput("table2"),dataTableOutput("table3")),
         tabPanel("Sieć współzasiadania",imageOutput("pieImage"),
                  htmlOutput("netbreaks"),
                  helpText("Powyższy rysunek przedstawia sieć złożoną z sędziów orzekających w wybranym sądzie.
