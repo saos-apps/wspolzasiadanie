@@ -1,0 +1,59 @@
+---
+title: "Składy orzekające polskich sądów: analiza ilościowa"
+author: "PS & MB<br>ICM UW"
+date: today
+bibliography: wspolzasiadanie.bib
+output:
+  html_document:
+    self_contained: true
+    theme: united
+    highlight: pygment
+    toc: true
+    number_section: true
+---
+
+---
+
+
+
+# Wprowadzenie
+
+Ilościowe analizy prawa lub systemu prawnego, m.in.:
+@bommarito_empirical_2011
+@bommarito_mathematical_2010
+@cross_decision_2007
+
+Pytania badawcze:
+
+- 
+
+
+
+# Podobne badania
+
+W jaki sposób sądy decydują kto będzie orzekać w danej sprawie?
+
+
+
+# Dane i metody analizy
+
+System SAOS.
+
+Analiza sieci społecznych.
+
+Ile orzeczeń z jakich sądów.
+
+
+# Analizy
+
+
+# Podsumowanie
+
+
+
+# Literatura
+
+
+<!--
+  vim:spell:spelllang=pl:wrap:linebreak:cul
+-->
